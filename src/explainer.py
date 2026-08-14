@@ -32,13 +32,17 @@ def load_taxonomy() -> dict:
         return yaml.safe_load(f)
 
 
-def _argument_template_for(paradigm_id: str, taxonomy: dict) -> str:
+def _argument_template_key(paradigm_id: str, taxonomy: dict) -> str:
     for p in taxonomy.get("paradigms", []):
         if p["id"] == paradigm_id:
-            key = p.get("argument_template", "")
-            templates = taxonomy.get("argument_templates", {})
-            return templates.get(key, key or "general_correctness")
+            return p.get("argument_template") or "general_correctness"
     return "general_correctness"
+
+
+def _argument_template_for(paradigm_id: str, taxonomy: dict) -> str:
+    key = _argument_template_key(paradigm_id, taxonomy)
+    templates = taxonomy.get("argument_templates", {})
+    return templates.get(key, key)
 
 
 def _contrastive_from_rejections(classification: ClassificationResult) -> list[str]:
@@ -262,13 +266,21 @@ Greedy by value/weight density is optimal for fractional knapsack but not for 0/
     )
 
 
-_TEMPLATE_EXPLAINERS = {
-    "greedy_exchange": _explain_activity,
-    "dp_optimal_substructure": _explain_lis,
-    "graph_traversal": _explain_cycle,
-    "divide_and_conquer": _explain_mergesort,
-    "binary_search": _explain_binary_search_answer,
-}
+def _explain_topo(profile, classification, algorithm, verification):
+    why = """Kahn's algorithm maintains the in-degree of every remaining node. Nodes in the queue have in-degree 0 relative to the residual graph, so every predecessor has already been emitted. Emitting a node subtracts one from each successor's in-degree and may unlock that successor. If a directed cycle exists, at least one node never reaches in-degree 0, so fewer than |V| nodes are emitted.
+
+DFS three-coloring also works for cycle detection, but Union-Find cannot produce a linear order of directed dependencies."""
+    return Explanation(
+        paradigm_id="graph_traversal",
+        argument_template_used="invariant_or_coloring",
+        textbook_why=why.strip() + "\n\n" + _verification_note(verification),
+        why_alternatives_fail=_contrastive_from_rejections(classification),
+        edge_cases_discussed=[
+            "Empty graph → empty order.",
+            "Single node → that node.",
+            "A cycle → None (fewer than |V| nodes emitted).",
+        ],
+    )
 
 
 def _match_explainer(
@@ -278,14 +290,17 @@ def _match_explainer(
     verification: VerificationReport,
 ) -> Optional[Explanation]:
     text = profile.summary.lower()
-    # Prefer problem-specific matches when the generic paradigm template would be wrong
     if any(w in text for w in ["activity", "activities", "interval", "intervals", "non-overlapping"]):
         return _explain_activity(profile, classification, algorithm, verification)
     if any(w in text for w in ["longest increasing", "lis", "increasing subsequence"]):
         return _explain_lis(profile, classification, algorithm, verification)
-    if any(w in text for w in ["cycle", "directed graph"]):
+    if any(w in text for w in ["topological", "topo sort", "topo-sort"]):
+        return _explain_topo(profile, classification, algorithm, verification)
+    if any(w in text for w in ["cycle", "directed graph"]) and "topo" not in text:
         return _explain_cycle(profile, classification, algorithm, verification)
-    if any(w in text for w in ["merge sort", "mergesort"]):
+    if any(w in text for w in ["merge sort", "mergesort"]) or (
+        "sort" in text and ("divide-and-conquer" in text or "divide and conquer" in text)
+    ):
         return _explain_mergesort(profile, classification, algorithm, verification)
     if any(w in text for w in ["koko", "eating bananas", "speed k"]):
         return _explain_binary_search_answer(profile, classification, algorithm, verification)
@@ -295,10 +310,6 @@ def _match_explainer(
         return _explain_lcs(profile, classification, algorithm, verification)
     if any(w in text for w in ["knapsack", "0/1"]):
         return _explain_knapsack(profile, classification, algorithm, verification)
-
-    fn = _TEMPLATE_EXPLAINERS.get(classification.primary_paradigm_id)
-    if fn:
-        return fn(profile, classification, algorithm, verification)
     return None
 
 
@@ -380,7 +391,7 @@ def explain(
     # Minimal fallback
     return Explanation(
         paradigm_id=classification.primary_paradigm_id,
-        argument_template_used=_argument_template_for(
+        argument_template_used=_argument_template_key(
             classification.primary_paradigm_id, load_taxonomy()
         ),
         textbook_why=(
