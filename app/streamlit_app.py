@@ -18,6 +18,13 @@ import streamlit as st
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
+from app.ui import (
+    DEFAULT_SHOW_PYTHON,
+    EXAMPLES,
+    can_toggle_python,
+    toggle_label,
+    visible_code,
+)
 from src.pipeline import run_oracle
 
 st.set_page_config(
@@ -46,37 +53,14 @@ with st.sidebar:
     )
     st.markdown("---")
     st.markdown("**Example problems**")
-    examples = {
-        "Longest Increasing Subsequence": (
-            "Given an array of integers, return the length of the longest "
-            "strictly increasing subsequence."
-        ),
-        "Activity selection": (
-            "You are given a list of activities, each with a start time and a finish time. "
-            "Select the largest possible set of activities so that no two overlap."
-        ),
-        "Directed cycle detection": (
-            "Determine whether a directed graph contains a cycle."
-        ),
-        "Underspecified graph (triggers gate)": (
-            "Find the shortest path between two nodes in a graph."
-        ),
-        "Mergesort": (
-            "Sort an array of n integers in O(n log n) time using a divide-and-conquer approach."
-        ),
-        "Koko eating bananas": (
-            "Koko can eat bananas at speed k. Given piles and hours h, find the minimum "
-            "integer k such that she can finish all piles in at most h hours."
-        ),
-    }
-    chosen_example = st.selectbox("Load example", ["(none)"] + list(examples.keys()))
+    chosen_example = st.selectbox("Load example", ["(none)"] + list(EXAMPLES.keys()))
 
 # ---------------------------------------------------------------------------
 # Input
 # ---------------------------------------------------------------------------
 default_text = ""
 if chosen_example != "(none)":
-    default_text = examples[chosen_example]
+    default_text = EXAMPLES[chosen_example]
 
 user_problem = st.text_area(
     "Describe the algorithmic problem",
@@ -90,7 +74,7 @@ run_clicked = st.button("Consult the Oracle", type="primary")
 if "oracle_result" not in st.session_state:
     st.session_state.oracle_result = None
 if "show_python" not in st.session_state:
-    st.session_state.show_python = False
+    st.session_state.show_python = DEFAULT_SHOW_PYTHON
 
 if run_clicked:
     if not user_problem.strip():
@@ -100,7 +84,7 @@ if run_clicked:
         with st.spinner("Profiling problem..."):
             try:
                 st.session_state.oracle_result = run_oracle(user_problem.strip(), force=False)
-                st.session_state.show_python = False
+                st.session_state.show_python = DEFAULT_SHOW_PYTHON
             except Exception as e:
                 st.error(f"Pipeline error: {type(e).__name__}: {e}")
                 st.session_state.oracle_result = None
@@ -140,7 +124,7 @@ if result is not None:
             with st.spinner("Running full pipeline with current assumptions..."):
                 try:
                     st.session_state.oracle_result = run_oracle(user_problem.strip(), force=True)
-                    st.session_state.show_python = False
+                    st.session_state.show_python = DEFAULT_SHOW_PYTHON
                     st.rerun()
                 except Exception as e:
                     st.error(f"Pipeline error: {type(e).__name__}: {e}")
@@ -180,19 +164,20 @@ if result is not None:
 
         code_col, btn_col = st.columns([5, 1])
         with btn_col:
-            if algorithm.python_candidate:
-                label = "Show Python" if not st.session_state.show_python else "Show Pseudocode"
-                if st.button(label, key="toggle_code"):
+            if can_toggle_python(algorithm.python_candidate):
+                if st.button(toggle_label(st.session_state.show_python), key="toggle_code"):
                     st.session_state.show_python = not st.session_state.show_python
                     st.rerun()
 
         with code_col:
-            if st.session_state.show_python and algorithm.python_candidate:
-                st.markdown("**Python implementation**")
-                st.code(algorithm.python_candidate, language="python")
-            else:
-                st.markdown("**Pseudocode**")
-                st.code(algorithm.pseudocode, language="text")
+            heading, source = visible_code(
+                pseudocode=algorithm.pseudocode,
+                python_candidate=algorithm.python_candidate,
+                show_python=st.session_state.show_python,
+            )
+            st.markdown(f"**{heading}**")
+            language = "python" if heading.startswith("Python") else "text"
+            st.code(source, language=language)
 
         st.subheader("3. Verification")
         status = verification.status
