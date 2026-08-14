@@ -113,11 +113,11 @@ git add -p && git commit -m "[ID] ..."
 ```
 
 ## Success (v1 teeth)
-- [ ] Labeled classifier regression green  
-- [ ] Buggy toy algorithm → verification **failed** with example  
-- [ ] Correct toy → **passed**  
-- [ ] Full pipeline on DP + Greedy + Graph samples  
-- [ ] Clarification gate on underspecified graph  
+- [x] Labeled classifier regression green
+- [x] Buggy toy algorithm → verification **failed** with example
+- [x] Correct toy → **passed**
+- [x] Full pipeline on DP + Greedy + Graph samples
+- [x] Clarification gate on underspecified graph  
 
 ---
 

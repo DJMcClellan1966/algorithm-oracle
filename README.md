@@ -29,18 +29,29 @@ algorithm-oracle/
 ├── schemas/           # Pydantic / JSON schemas for every stage
 ├── prompts/           # System prompts per stage
 ├── verification/      # Brute-force generator + differential tester
-├── app/               # UI (Streamlit skeleton)
+├── app/               # Streamlit UI (pseudocode primary)
 ├── src/               # Core pipeline orchestration
 ├── examples/          # Test problems + expected classifications
-└── tests/             # Unit tests for schemas, verification, etc.
+├── scripts/           # Demos + gatekeeper smoke
+└── tests/             # Regression for harness, pipeline stages, UI contract
 ```
 
 ## Quick Start
 
+From this repository root (not `artifacts/algorithm-oracle`):
+
 ```bash
-cd artifacts/algorithm-oracle
 pip install -r requirements.txt
+PYTHONPATH=. python -m pytest tests/ -v
 PYTHONPATH=. streamlit run app/streamlit_app.py
+```
+
+Gatekeeper (human-run; do not trust agent self-reports alone):
+
+```bash
+./run_checks.sh          # Unix / Git Bash
+# or
+.\run_checks.ps1         # Windows PowerShell
 ```
 
 Offline demos (no API key required):
@@ -55,6 +66,9 @@ Set `OPENAI_API_KEY` to use the real LLM path instead of offline templates.
 
 ## Status
 
-Core pipeline complete: Profile → Classify → Instantiate → Verify → Explain.  
-Streamlit UI wired (pseudocode primary, Python toggle, classification + verification + why).  
-Offline templates cover classic problems; optional LLM via API key.
+v1 pipeline is wired and test-backed: Profile → Classify → Instantiate → Verify → Explain.
+
+- Labeled classics (LIS, activity selection, directed cycle, …) verify **passed**.
+- Unmatched problems (for example US coin change) **stub** and report `outside_verifiable_range` — they do not steal another template and false-pass.
+- Underspecified graphs hit the clarification gate; `force=True` bypasses it.
+- Streamlit shows **pseudocode first**, with a toggle to Python when a `def solve` candidate exists.

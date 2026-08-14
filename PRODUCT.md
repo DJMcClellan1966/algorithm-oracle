@@ -41,13 +41,13 @@ Plausible-looking algorithms are not enough. Classification must be explicit, im
 - Local-first; optional OPENAI_API_KEY for LLM stages (offline templates required)
 
 ## Success criteria (teeth, not vibes)
-- [ ] `run_checks.sh` exits 0 on clean tree
-- [ ] Classifier regression: all labeled examples in `examples/test_problems.json` match expected paradigm
-- [ ] Differential tester flags a known-buggy LIS (or similar) as **failed** with concrete counter-examples
-- [ ] Differential tester passes a known-correct LIS / mergesort / activity-selection path
-- [ ] No pipeline stage marked done without tests that would fail if the stage were deleted
-- [ ] UI or CLI can run Profile → Classify → Instantiate → Verify → Explain on ≥3 benchmark types (DP, Greedy, Graph)
-- [ ] When verification is not applicable, status is `outside_verifiable_range` (never silent “passed”)
+- [x] `run_checks.sh` (or `run_checks.ps1`) exits 0 after pytest + LIS smoke
+- [x] Classifier regression: all labeled examples in `examples/test_problems.json` match expected paradigm
+- [x] Differential tester flags a known-buggy LIS (or similar) as **failed** with concrete counter-examples
+- [x] Differential tester passes a known-correct LIS / activity-selection / directed-cycle path
+- [x] No pipeline stage marked done without tests that would fail if the stage were deleted
+- [x] `run_oracle` runs Profile → Classify → Instantiate → Verify → Explain on ≥3 benchmark types (DP, Greedy, Graph)
+- [x] When verification is not applicable, status is `outside_verifiable_range` (never silent “passed”)
 
 ## Sample demos
 - LIS length

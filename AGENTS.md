@@ -5,7 +5,8 @@ You are a disciplined implementer, not an oracle. This project exists to catch c
 ## Always read first
 1. `PRODUCT.md` (scope + success criteria)
 2. This file (`AGENTS.md`)
-3. Relevant existing modules under `src/`, `verification/`, `tests/`
+3. `MINI_DECOMP.md` if present (task IDs + session rules)
+4. Relevant existing modules under `src/`, `verification/`, `tests/`
 
 ## Non-negotiables
 1. **Plan before code** for any change touching >2 files or a new module.
@@ -45,7 +46,7 @@ When implementing or fixing:
 - **Test:** `PYTHONPATH=. python -m pytest tests/ -v`
 - **Demo pipeline:** `PYTHONPATH=. python scripts/demo_full.py`
 - **UI:** `PYTHONPATH=. streamlit run app/streamlit_app.py`
-- **Gatekeeper (human runs this outside the agent):** `./run_checks.sh`
+- **Gatekeeper (human runs this outside the agent):** `./run_checks.sh` or `.\run_checks.ps1`
 
 ## Task report format (end of every implement turn)
 1. Task name
