@@ -1,0 +1,23 @@
+# Core
+pydantic>=2.0
+pyyaml>=6.0
+python-dotenv>=1.0
+
+# LLM / structured output (choose one or more)
+openai>=1.0
+anthropic>=0.18
+instructor>=1.0          # structured outputs helper
+ollama>=0.1              # local models
+
+# Verification
+hypothesis>=6.0          # property-based testing
+numpy>=1.24
+
+# UI
+streamlit>=1.28
+# or gradio>=4.0
+
+# Dev / testing
+pytest>=7.0
+black>=23.0
+ruff>=0.1

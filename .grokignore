@@ -1,0 +1,22 @@
+# Keep secrets and bulky/irrelevant paths out of agent context
+.env
+.env.*
+*.pem
+*.key
+secrets/
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+node_modules/
+*.db
+*.sqlite
+*.sqlite3
+.DS_Store
+artifacts/
+imagine_images/

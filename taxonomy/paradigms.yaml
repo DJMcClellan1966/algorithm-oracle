@@ -1,0 +1,238 @@
+# Algorithm Oracle – Core Taxonomy
+# This is the single source of truth for classification and explanation templates.
+# Every paradigm has:
+#   - id
+#   - name
+#   - description
+#   - precondition_checklist (must be answered before claiming this paradigm)
+#   - argument_template (required structure for the "why")
+#   - canonical_problems
+#   - common_pitfalls
+
+paradigms:
+
+  - id: greedy_exchange
+    name: Greedy (Exchange Argument)
+    description: >
+      Make a locally optimal choice at each step. Correctness relies on the
+      exchange argument: any optimal solution can be transformed into the
+      greedy solution without decreasing quality.
+    precondition_checklist:
+      - "Does a greedy choice property hold? (There is always an optimal solution that includes the greedy choice.)"
+      - "Can an exchange/swap argument be stated cleanly?"
+      - "Is the problem free of the classic greedy traps (e.g., non-canonical coin systems, activity selection by start time)?"
+    argument_template: exchange_argument
+    canonical_problems:
+      - Activity selection / interval scheduling
+      - Huffman coding
+      - Fractional knapsack
+      - Minimum spanning tree (Kruskal/Prim – cut property)
+    common_pitfalls:
+      - Claiming greedy works when only a DP solution is correct
+      - Sorting by the wrong key
+
+  - id: dp_optimal_substructure
+    name: Dynamic Programming
+    description: >
+      Problems with optimal substructure and overlapping subproblems.
+      Solve smaller subproblems first and combine them.
+    precondition_checklist:
+      - "Are there overlapping subproblems?"
+      - "Does optimal substructure hold? (Optimal solution contains optimal solutions to subproblems.)"
+      - "Can a clear state definition and recurrence be written?"
+      - "Is the state space tractable for the given constraints?"
+    argument_template: subproblem_recurrence
+    canonical_problems:
+      - Longest Increasing Subsequence
+      - 0/1 Knapsack
+      - Edit Distance / Levenshtein
+      - Matrix Chain Multiplication
+      - Longest Common Subsequence
+    common_pitfalls:
+      - Using DP when a simpler greedy or math formula exists
+      - Incorrect state definition leading to wrong recurrence
+
+  - id: divide_and_conquer
+    name: Divide and Conquer
+    description: >
+      Recursively break the problem into independent subproblems, solve them,
+      then combine. Subproblems do not overlap.
+    precondition_checklist:
+      - "Can the problem be cleanly divided into independent smaller instances?"
+      - "Is there a clear combine step?"
+      - "Do the subproblems truly not overlap? (If they overlap → prefer DP)"
+    argument_template: master_theorem_or_induction
+    canonical_problems:
+      - Merge Sort
+      - Quick Sort (average)
+      - Closest pair of points
+      - Strassen matrix multiplication
+      - Binary search (degenerate case)
+    common_pitfalls:
+      - Calling ordinary recursion "divide and conquer"
+      - Missing that subproblems overlap
+
+  - id: graph_traversal
+    name: Graph Traversal / Search
+    description: >
+      BFS, DFS, and their applications (cycle detection, topological order,
+      connected components, shortest paths in unweighted graphs).
+    precondition_checklist:
+      - "Is the core structure a graph (explicit or implicit)?"
+      - "Do we need reachability, ordering, or level-by-level exploration?"
+    argument_template: invariant_or_coloring
+    canonical_problems:
+      - Cycle detection (directed / undirected)
+      - Topological sort
+      - Connected components
+      - Bipartite check
+      - Shortest path in unweighted graph (BFS)
+    common_pitfalls:
+      - Using DFS/BFS when a more specific algorithm (Dijkstra, Union-Find) is better
+
+  - id: shortest_path
+    name: Shortest Path Algorithms
+    description: >
+      Dijkstra, Bellman-Ford, Floyd-Warshall, A*, etc.
+    precondition_checklist:
+      - "Are edge weights present?"
+      - "Non-negative weights? (Dijkstra) or arbitrary? (Bellman-Ford)"
+      - "Single source or all-pairs?"
+    argument_template: cut_property_or_relaxation
+    canonical_problems:
+      - Dijkstra
+      - Bellman-Ford
+      - Floyd-Warshall
+    common_pitfalls:
+      - Using Dijkstra with negative weights
+
+  - id: network_flow
+    name: Network Flow
+    description: >
+      Max-flow / min-cut and reductions to flow.
+    precondition_checklist:
+      - "Can the problem be modeled as a flow network with capacities?"
+      - "Is there a natural source and sink?"
+    argument_template: maxflow_mincut
+    canonical_problems:
+      - Maximum bipartite matching
+      - Project selection
+      - Image segmentation (basic)
+    common_pitfalls:
+      - Over-applying flow when a simpler matching or greedy works
+
+  - id: backtracking
+    name: Backtracking / Branch and Bound
+    description: >
+      Systematic search of the solution space with pruning.
+    precondition_checklist:
+      - "Is the search space large but structured so that pruning is effective?"
+      - "Can partial solutions be rejected early?"
+    argument_template: search_tree_pruning
+    canonical_problems:
+      - N-Queens
+      - Sudoku solver
+      - Hamiltonian path (exact)
+      - Constraint satisfaction basics
+    common_pitfalls:
+      - Using pure backtracking when DP or meet-in-the-middle is possible
+
+  - id: two_pointers_sliding
+    name: Two Pointers / Sliding Window
+    description: >
+      Linear or near-linear techniques on arrays/strings that maintain a window or pair of indices.
+    precondition_checklist:
+      - "Is the input a sequence (array/string)?"
+      - "Can we maintain a useful invariant while moving pointers?"
+    argument_template: invariant_maintenance
+    canonical_problems:
+      - Container with most water
+      - Longest substring without repeating characters
+      - Minimum window substring
+      - 3Sum / 4Sum variants
+    common_pitfalls:
+      - Incorrect pointer movement leading to missed solutions
+
+  - id: binary_search
+    name: Binary Search (on answer or on index)
+    description: >
+      Search on a monotonic predicate, either on array indices or on the answer space.
+    precondition_checklist:
+      - "Is there a monotonic property? (If mid is feasible, then higher/lower is also feasible)"
+    argument_template: monotonicity
+    canonical_problems:
+      - Classic binary search
+      - Search insert position
+      - Koko eating bananas / capacity to ship packages
+      - Split array largest sum
+    common_pitfalls:
+      - Off-by-one in low/high updates
+      - Applying binary search without monotonicity
+
+  - id: union_find
+    name: Union-Find (Disjoint Set Union)
+    description: >
+      Maintain disjoint sets with near-constant time union and find.
+    precondition_checklist:
+      - "Do we need to track connected components under unions?"
+      - "Are the operations online or offline?"
+    argument_template: component_invariant
+    canonical_problems:
+      - Number of islands (variants)
+      - Accounts merge
+      - Kruskal's MST
+      - Redundant connection
+    common_pitfalls: []
+
+  - id: math_formula
+    name: Direct Math / Closed Form
+    description: >
+      The problem reduces to a mathematical formula or simple counting without search.
+    precondition_checklist:
+      - "Is there a closed-form or direct combinatorial solution?"
+    argument_template: mathematical_derivation
+    canonical_problems:
+      - Climbing stairs (simple cases)
+      - Unique paths in grid (combinatorial)
+      - Josephus problem (special cases)
+    common_pitfalls:
+      - Missing a simple formula and over-engineering with DP
+
+# Argument templates referenced above
+argument_templates:
+  exchange_argument: |
+    1. State the greedy choice.
+    2. Take an arbitrary optimal solution.
+    3. Show that if it differs from the greedy choice, we can exchange/swap
+       to include the greedy choice without decreasing quality.
+    4. Argue that the remaining subproblem is of the same form.
+    5. Conclude by induction.
+
+  subproblem_recurrence: |
+    1. Define the state clearly (what dp[i] or dp[i][j] represents).
+    2. Write the recurrence and explain why it covers all cases.
+    3. Identify base cases.
+    4. Argue that every subproblem is solved before it is needed
+       (topological order of the DAG of dependencies).
+    5. Show how the final answer is extracted from the DP table.
+
+  invariant_or_coloring: |
+    1. State the invariant maintained by the search (e.g., colors, discovery times).
+    2. Show that the invariant holds at initialization.
+    3. Show that each step preserves the invariant.
+    4. Show that violation of the invariant (or a specific edge type)
+       corresponds exactly to the property being detected (cycle, etc.).
+
+  monotonicity: |
+    1. State the feasibility predicate P(x) on the search domain.
+    2. Argue that P is monotonic (if P(x) then P(y) for all y on the feasible side of x).
+    3. Maintain the invariant that the answer lies in [lo, hi].
+    4. Show that each binary-search step correctly shrinks the interval.
+    5. When lo = hi, the remaining value is optimal.
+
+  master_theorem_or_induction: |
+    1. Write the recurrence for time (or correctness).
+    2. Apply Master Theorem or strong induction.
+    3. Justify the base case and inductive step.
+
+  # ... additional templates can be expanded later

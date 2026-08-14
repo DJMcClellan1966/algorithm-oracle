@@ -1,0 +1,62 @@
+[
+  {
+    "id": "activity_selection",
+    "problem": "You are given a list of activities, each with a start time and a finish time. Select the largest possible set of activities so that no two overlap.",
+    "expected_paradigm_id": "greedy_exchange",
+    "notes": "Classic exchange-argument example. Sorting by finish time is essential."
+  },
+  {
+    "id": "lis",
+    "problem": "Given an array of integers, return the length of the longest strictly increasing subsequence.",
+    "expected_paradigm_id": "dp_optimal_substructure",
+    "notes": "O(n\u00b2) DP is the standard teaching version; O(n log n) exists but is more advanced."
+  },
+  {
+    "id": "directed_cycle",
+    "problem": "Determine whether a directed graph contains a cycle.",
+    "expected_paradigm_id": "graph_traversal",
+    "notes": "DFS + recursion-stack (gray) nodes is the classic approach."
+  },
+  {
+    "id": "coin_change_canonical",
+    "problem": "Given US coin denominations (1, 5, 10, 25) and a target amount, find the minimum number of coins that sum to the amount.",
+    "expected_paradigm_id": "greedy_exchange",
+    "notes": "Canonical system \u2192 greedy is optimal. Non-canonical systems require DP."
+  },
+  {
+    "id": "merge_sort",
+    "problem": "Sort an array of n integers in O(n log n) time using a divide-and-conquer approach.",
+    "expected_paradigm_id": "divide_and_conquer",
+    "notes": "Classic D&C example."
+  },
+  {
+    "id": "binary_search_answer",
+    "problem": "Koko can eat bananas at speed k. Given piles and hours h, find the minimum integer k such that she can finish all piles in at most h hours.",
+    "expected_paradigm_id": "binary_search",
+    "notes": "Binary search on the answer space (monotonic predicate)."
+  },
+  {
+    "id": "two_sum_sorted",
+    "problem": "Given an array of integers and a target, determine whether any two elements sum to the target. You may sort the array and use two pointers.",
+    "expected_paradigm_id": "two_pointers_sliding",
+    "notes": "Sort + two pointers."
+  },
+  {
+    "id": "lcs",
+    "problem": "Given two sequences, compute the length of their longest common subsequence.",
+    "expected_paradigm_id": "dp_optimal_substructure",
+    "notes": "Classic DP."
+  },
+  {
+    "id": "knapsack_01",
+    "problem": "0/1 knapsack: given item weights and values and capacity W, maximize total value without exceeding capacity. Each item at most once.",
+    "expected_paradigm_id": "dp_optimal_substructure",
+    "notes": "Not fractional."
+  },
+  {
+    "id": "topo_sort",
+    "problem": "Given a directed graph, return a topological ordering of its nodes, or report that a cycle exists.",
+    "expected_paradigm_id": "graph_traversal",
+    "notes": "Kahn or DFS."
+  }
+]

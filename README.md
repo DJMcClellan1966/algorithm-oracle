@@ -1,0 +1,60 @@
+# Algorithm Oracle
+
+A structured algorithmic advisor that forces explicit classification, verification, and textbook-style justification.
+
+## Pipeline
+
+1. **Problem Profiler** – structured profile + clarification gate
+2. **Paradigm Tournament / Classifier** – ranked candidates + explicit rejections + precondition checks
+3. **Concrete Instantiation** – loop invariant first → pseudocode + brute-force reference
+4. **Verification Harness** – differential testing vs reference + adversarial cases
+5. **Explanation Synthesizer** – paradigm-specific proof template + contrastive section
+
+UI default: **Pseudocode first**, with toggle to real implementation (Python).
+
+## Design Principles
+
+- Classification is the highest-risk stage → multi-candidate + explicit rejections
+- No explanation without verification when verification is feasible
+- Argument templates, not free-form “book voice”
+- Uncertainty is a required field
+- Strict structured JSON between stages
+- Taxonomy is the single source of truth
+
+## Project Layout
+
+```
+algorithm-oracle/
+├── taxonomy/          # Paradigm definitions, precondition checklists, argument templates
+├── schemas/           # Pydantic / JSON schemas for every stage
+├── prompts/           # System prompts per stage
+├── verification/      # Brute-force generator + differential tester
+├── app/               # UI (Streamlit skeleton)
+├── src/               # Core pipeline orchestration
+├── examples/          # Test problems + expected classifications
+└── tests/             # Unit tests for schemas, verification, etc.
+```
+
+## Quick Start
+
+```bash
+cd artifacts/algorithm-oracle
+pip install -r requirements.txt
+PYTHONPATH=. streamlit run app/streamlit_app.py
+```
+
+Offline demos (no API key required):
+
+```bash
+PYTHONPATH=. python scripts/demo_full.py
+PYTHONPATH=. python scripts/demo_classifier.py
+PYTHONPATH=. python scripts/demo_verification.py
+```
+
+Set `OPENAI_API_KEY` to use the real LLM path instead of offline templates.
+
+## Status
+
+Core pipeline complete: Profile → Classify → Instantiate → Verify → Explain.  
+Streamlit UI wired (pseudocode primary, Python toggle, classification + verification + why).  
+Offline templates cover classic problems; optional LLM via API key.
