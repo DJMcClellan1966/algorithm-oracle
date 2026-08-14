@@ -606,18 +606,6 @@ def _match_template(profile: ProblemProfile, classification: ClassificationResul
         return TEMPLATES["koko"]()
     if any(w in text for w in ["merge sort", "mergesort", "divide-and-conquer", "divide and conquer"]):
         return TEMPLATES["mergesort"]()
-    if classification.primary_paradigm_id == "dp_optimal_substructure":
-        return TEMPLATES["lis"]()
-    if classification.primary_paradigm_id == "greedy_exchange":
-        return TEMPLATES["activity"]()
-    if classification.primary_paradigm_id == "binary_search":
-        return TEMPLATES["koko"]()
-    if classification.primary_paradigm_id == "divide_and_conquer":
-        return TEMPLATES["mergesort"]()
-    if classification.primary_paradigm_id == "graph_traversal":
-        return TEMPLATES["cycle"]()
-    if classification.primary_paradigm_id == "two_pointers_sliding":
-        return TEMPLATES["two_sum"]()
     return None
 
 

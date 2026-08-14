@@ -91,14 +91,12 @@ def verify(algorithm: ConcreteAlgorithm, *, function_name: str = "solve") -> Ver
         run_verification_from_source,
         compile_function,
         differential_test,
-        VerificationReport,
         generate_random_digraph,
     )
     import random as _rnd
 
     if "lcs" in notes or "longest common subsequence" in notes:
         from verification.harness import compile_function, differential_test
-        from schemas.models import VerificationReport, TestCaseResult
         try:
             cand = compile_function(candidate_src)
             ref = compile_function(algorithm.brute_force_reference)
@@ -126,7 +124,6 @@ def verify(algorithm: ConcreteAlgorithm, *, function_name: str = "solve") -> Ver
 
     if "0/1 knapsack" in notes or "knapsack" in notes:
         from verification.harness import compile_function, differential_test
-        from schemas.models import VerificationReport
         try:
             cand = compile_function(candidate_src)
             ref = compile_function(algorithm.brute_force_reference)
