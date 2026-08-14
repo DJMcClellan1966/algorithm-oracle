@@ -185,6 +185,23 @@ def generate_adversarial_koko() -> list[dict]:
     ]
 
 
+def generate_random_pairs(n: int = 6) -> tuple:
+    """(A, target) for two-sum / two-pointer problems."""
+    A = [random.randint(-20, 20) for _ in range(n)]
+    target = random.randint(-30, 30)
+    return (A, target)
+
+
+def generate_adversarial_pairs() -> list[dict]:
+    return [
+        {"desc": "empty", "input": ([], 0)},
+        {"desc": "single", "input": ([5], 5)},
+        {"desc": "pair hit", "input": ([1, 4, 7], 5)},
+        {"desc": "pair miss", "input": ([1, 4, 7], 100)},
+        {"desc": "negatives", "input": ([-3, -1, 2], -4)},
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Differential testing
 
@@ -381,19 +398,8 @@ def run_verification_for_paradigm(
         random_inputs = [generate_random_koko(random.randint(1, 5)) for _ in range(num_random)]
         adv = generate_adversarial_koko()
     elif paradigm_id == "two_pointers_sliding":
-        random_inputs = []
-        for _ in range(num_random):
-            n = random.randint(0, 10)
-            A = [random.randint(-20, 20) for _ in range(n)]
-            target = random.randint(-30, 30)
-            random_inputs.append((A, target))
-        adv = [
-            {"desc": "empty", "input": ([], 0)},
-            {"desc": "single", "input": ([5], 5)},
-            {"desc": "pair hit", "input": ([1, 4, 7], 5)},
-            {"desc": "pair miss", "input": ([1, 4, 7], 100)},
-            {"desc": "negatives", "input": ([-3, -1, 2], -4)},
-        ]
+        random_inputs = [generate_random_pairs(random.randint(0, 10)) for _ in range(num_random)]
+        adv = generate_adversarial_pairs()
     else:
         return run_verification(
             candidate, reference, random_n_range=(0, 8), num_random=num_random
