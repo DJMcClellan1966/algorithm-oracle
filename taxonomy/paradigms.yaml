@@ -235,4 +235,48 @@ argument_templates:
     2. Apply Master Theorem or strong induction.
     3. Justify the base case and inductive step.
 
-  # ... additional templates can be expanded later
+  maxflow_mincut: |
+    1. Model the problem as a flow network (capacities, source, sink).
+    2. State that each augmenting path increases a feasible s-t flow.
+    3. Argue termination when no s-t path remains in the residual graph.
+    4. Identify the residual-reachable set from s as an s-t cut.
+    5. Conclude by the max-flow min-cut theorem that the flow equals that
+       cut capacity and is therefore optimal.
+
+  search_tree_pruning: |
+    1. Describe the search tree (the choice made at each step).
+    2. State the invariant on every partial solution still under consideration.
+    3. Show that a pruned branch cannot contain a valid (or better) complete solution.
+    4. Show that every valid complete solution is still reached if not pruned.
+    5. Conclude correctness of the remaining search.
+
+  invariant_maintenance: |
+    1. State the window or pointer invariant (what the current indices represent).
+    2. Show the invariant holds at initialization.
+    3. Show each pointer move preserves the invariant and never skips a feasible solution.
+    4. Argue termination (indices only advance; the window only shrinks or slides).
+    5. Extract the answer from the final state.
+
+  cut_property_or_relaxation: |
+    1. State the shortest-path invariant (finalized vs tentative distances).
+    2. Identify the cut between settled and unsettled nodes, or the relaxation order.
+    3. Argue that the next extracted node already has a true shortest path
+       (non-negative weights, or no negative cycle for Bellman-Ford).
+    4. Show each relaxation never increases a distance and reaches a fixed point.
+    5. Extract the required distance or report unreachability.
+
+  component_invariant: |
+    1. State what each disjoint set represents after a prefix of unions.
+    2. Show the invariant holds when every element is a singleton.
+    3. Show find and union preserve the invariant (rank / path compression optional).
+    4. Argue that the query (same component, cycle-closing edge) is answered
+       exactly by the current sets.
+    5. Conclude from a counting or connectivity argument when the input is a
+       tree plus one extra edge (or similar).
+
+  mathematical_derivation: |
+    1. State the quantity being counted or computed.
+    2. Derive the closed form or recurrence from a complete case split.
+    3. Identify base cases.
+    4. Show the formula can be evaluated directly (no search table required).
+    5. Confirm it matches small values and the combinatorial interpretation.

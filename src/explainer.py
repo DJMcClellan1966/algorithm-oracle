@@ -413,6 +413,29 @@ def _match_explainer(
 # LLM path
 # ---------------------------------------------------------------------------
 
+def _fallback_explain(
+    profile: ProblemProfile,
+    classification: ClassificationResult,
+    algorithm: ConcreteAlgorithm,
+    verification: VerificationReport,
+) -> Explanation:
+    return Explanation(
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(
+            classification.primary_paradigm_id, load_taxonomy()
+        ),
+        textbook_why=(
+            algorithm.loop_invariant_or_key_insight
+            + "\n\n"
+            + _verification_note(verification)
+            + "\n\n(No specialized explanation template matched; real LLM recommended.)"
+        ),
+        why_alternatives_fail=_contrastive_from_rejections(classification),
+        formal_proof_sketch=None,
+        edge_cases_discussed=[],
+    )
+
+
 def _llm_explain(
     profile: ProblemProfile,
     classification: ClassificationResult,
@@ -420,7 +443,7 @@ def _llm_explain(
     verification: VerificationReport,
     model: str = "gpt-4o",
 ) -> Explanation:
-    from src.llm_client import get_llm_client_and_model
+    from src.llm_client import complete_structured
 
     taxonomy = load_taxonomy()
     template_key = _argument_template_key(classification.primary_paradigm_id, taxonomy)
@@ -444,14 +467,13 @@ Produce an Explanation JSON object. paradigm_id must match the classification.
 argument_template_used MUST be exactly this string: "{template_key}"
 """
 
-    client, model = get_llm_client_and_model(model)
-    result = client.chat.completions.create(
-        model=model,
+    result = complete_structured(
         response_model=Explanation,
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
+        default_model=model,
         temperature=0.3,
     )
     # Both fields are fully determined by the classification + taxonomy --
@@ -477,6 +499,13 @@ def explain(
     model: str = "gpt-4o",
     use_mock_if_no_key: bool = True,
 ) -> Explanation:
+    templated = _match_explainer(profile, classification, algorithm, verification)
+    if templated is not None:
+        return templated
+
+    if detect_shape(profile.summary) is not None:
+        return _fallback_explain(profile, classification, algorithm, verification)
+
     from src.llm_client import has_llm_backend
 
     if has_llm_backend():
@@ -487,23 +516,4 @@ def explain(
                 raise
             print(f"[explainer] LLM call failed ({e}); falling back to template")
 
-    templated = _match_explainer(profile, classification, algorithm, verification)
-    if templated is not None:
-        return templated
-
-    # Minimal fallback
-    return Explanation(
-        paradigm_id=classification.primary_paradigm_id,
-        argument_template_used=_argument_template_key(
-            classification.primary_paradigm_id, load_taxonomy()
-        ),
-        textbook_why=(
-            algorithm.loop_invariant_or_key_insight
-            + "\n\n"
-            + _verification_note(verification)
-            + "\n\n(No specialized explanation template matched; real LLM recommended.)"
-        ),
-        why_alternatives_fail=_contrastive_from_rejections(classification),
-        formal_proof_sketch=None,
-        edge_cases_discussed=[],
-    )
+    return _fallback_explain(profile, classification, algorithm, verification)

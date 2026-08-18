@@ -85,7 +85,7 @@ def verify(algorithm: ConcreteAlgorithm, *, function_name: str = "solve") -> Ver
     from src.problem_shapes import detect_shape
     from verification.harness import run_verification_for_shape
 
-    shape = detect_shape(algorithm.notes or "")
+    shape = algorithm.shape or detect_shape(algorithm.notes or "")
     return run_verification_for_shape(
         candidate_src,
         algorithm.brute_force_reference,

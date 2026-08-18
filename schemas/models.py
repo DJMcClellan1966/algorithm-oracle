@@ -70,6 +70,10 @@ class ConcreteAlgorithm(BaseModel):
         None, description="Executable Python implementation (def solve(...)) for verification and the UI toggle"
     )
     notes: Optional[str] = None
+    shape: Optional[str] = Field(
+        None,
+        description="Canonical problem-shape id from src.problem_shapes; used to pick verifiers",
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -278,34 +278,33 @@ def classify(
     """
     Main entry point for Phase 2.
 
-    If OPENAI_API_KEY (or compatible) is set, uses instructor for structured output.
-    Otherwise falls back to the mock classifier so the rest of the system remains testable.
+    Known shapes use the offline mock. The LLM path is only for unmatched
+    problems (or when the mock is explicitly disabled).
     """
     if taxonomy is None:
         taxonomy = load_taxonomy()
+
+    if detect_shape(profile.summary + " " + profile.input_type) is not None:
+        return _mock_classify(profile, taxonomy)
 
     from src.llm_client import has_llm_backend
 
     if not has_llm_backend() and use_mock_if_no_key:
         return _mock_classify(profile, taxonomy)
 
-    # Real structured call via instructor
     try:
-        from src.llm_client import get_llm_client_and_model
+        from src.llm_client import complete_structured
 
-        client, model = get_llm_client_and_model(model)
         system, user = build_classifier_prompt(profile, taxonomy)
-
-        result = client.chat.completions.create(
-            model=model,
+        return complete_structured(
             response_model=ClassificationResult,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
-            temperature=0.1,  # low temperature for classification consistency
+            default_model=model,
+            temperature=0.1,
         )
-        return result
     except Exception as e:
         if use_mock_if_no_key:
             print(f"[classifier] LLM call failed ({e}); falling back to mock")

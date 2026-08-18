@@ -1006,11 +1006,34 @@ TEMPLATES = {
 }
 
 
+def _shape_text(profile: ProblemProfile, classification: ClassificationResult) -> str:
+    return profile.summary + " " + classification.primary_paradigm_id
+
+
 def _match_template(profile: ProblemProfile, classification: ClassificationResult) -> Optional[ConcreteAlgorithm]:
-    text = profile.summary + " " + classification.primary_paradigm_id
-    shape = detect_shape(text)
+    shape = detect_shape(_shape_text(profile, classification))
     factory = TEMPLATES.get(shape)
-    return factory() if factory else None
+    if factory is None:
+        return None
+    algo = factory()
+    algo.shape = shape
+    return algo
+
+
+def _unmatched_stub(
+    classification: ClassificationResult, shape: Optional[str]
+) -> ConcreteAlgorithm:
+    return ConcreteAlgorithm(
+        paradigm_id=classification.primary_paradigm_id,
+        loop_invariant_or_key_insight="(No template matched – real LLM required for this problem.)",
+        pseudocode="# TODO: no offline template for this problem/paradigm combination",
+        time_complexity="unknown",
+        space_complexity="unknown",
+        brute_force_reference=None,
+        python_candidate=None,
+        notes="Fallback stub. Provide OPENAI_API_KEY or add a template.",
+        shape=shape,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1035,7 +1058,7 @@ def _llm_instantiate(
     classification: ClassificationResult,
     model: str = "gpt-4o",
 ) -> ConcreteAlgorithm:
-    from src.llm_client import get_llm_client_and_model
+    from src.llm_client import complete_structured
 
     system = (PROMPTS_DIR / "instantiator_system.txt").read_text(encoding="utf-8")
     # Strengthen the prompt so both executable sources are required
@@ -1059,18 +1082,18 @@ Classification (FIXED – do not change the paradigm):
 Produce a ConcreteAlgorithm JSON object.
 """
 
-    client, model = get_llm_client_and_model(model)
-    result = client.chat.completions.create(
-        model=model,
+    result = complete_structured(
         response_model=ConcreteAlgorithm,
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
+        default_model=model,
         temperature=0.2,
     )
     # Ensure paradigm_id matches classification
     result.paradigm_id = classification.primary_paradigm_id
+    result.shape = detect_shape(_shape_text(profile, classification))
     result.python_candidate = _strip_code_fence(result.python_candidate)
     result.brute_force_reference = _strip_code_fence(result.brute_force_reference)
     return result
@@ -1089,7 +1112,18 @@ def instantiate(
 ) -> ConcreteAlgorithm:
     """
     Main entry point for Phase 3.
+
+    Known shapes use the offline template (or an explicit stub). The LLM
+    path is only for unmatched problems.
     """
+    templated = _match_template(profile, classification)
+    if templated is not None:
+        return templated
+
+    shape = detect_shape(_shape_text(profile, classification))
+    if shape is not None:
+        return _unmatched_stub(classification, shape)
+
     from src.llm_client import has_llm_backend
 
     if has_llm_backend():
@@ -1098,20 +1132,6 @@ def instantiate(
         except Exception as e:
             if not use_mock_if_no_key:
                 raise
-            print(f"[instantiator] LLM call failed ({e}); falling back to template")
+            print(f"[instantiator] LLM call failed ({e}); falling back to stub")
 
-    templated = _match_template(profile, classification)
-    if templated is not None:
-        return templated
-
-    # Last-resort minimal stub so the pipeline does not crash
-    return ConcreteAlgorithm(
-        paradigm_id=classification.primary_paradigm_id,
-        loop_invariant_or_key_insight="(No template matched – real LLM required for this problem.)",
-        pseudocode="# TODO: no offline template for this problem/paradigm combination",
-        time_complexity="unknown",
-        space_complexity="unknown",
-        brute_force_reference=None,
-        python_candidate=None,
-        notes="Fallback stub. Provide OPENAI_API_KEY or add a template.",
-    )
+    return _unmatched_stub(classification, shape)

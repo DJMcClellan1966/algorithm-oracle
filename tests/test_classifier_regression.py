@@ -43,3 +43,18 @@ def test_all_examples_have_rejections():
     for example in load_examples():
         result = classify_from_text(example["problem"])
         assert len(result.rejected) >= 1, f"[{example['id']}] expected at least one rejection"
+
+
+def test_known_shape_does_not_call_llm_classifier(monkeypatch):
+    monkeypatch.setattr("src.llm_client.has_llm_backend", lambda: True)
+
+    def boom(*_a, **_k):
+        raise AssertionError("LLM must not run for a known shape")
+
+    monkeypatch.setattr("src.llm_client.complete_structured", boom)
+    result = classify_from_text(
+        "Given an array of integers, return the length of the longest "
+        "strictly increasing subsequence."
+    )
+    assert result.primary_paradigm_id == "dp_optimal_substructure"
+    assert "Mock" in (result.unverified_because or "")

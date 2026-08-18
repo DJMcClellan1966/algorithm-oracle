@@ -99,17 +99,16 @@ def _heuristic_profile(user_text: str) -> ProblemProfile:
 
 
 def _llm_profile(user_text: str, model: str = "gpt-4o") -> ProblemProfile:
-    from src.llm_client import get_llm_client_and_model
+    from src.llm_client import complete_structured
 
     system = (PROMPTS_DIR / "profiler_system.txt").read_text(encoding="utf-8")
-    client, model = get_llm_client_and_model(model)
-    return client.chat.completions.create(
-        model=model,
+    return complete_structured(
         response_model=ProblemProfile,
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": f"Problem statement:\n\n{user_text.strip()}"},
         ],
+        default_model=model,
         temperature=0.1,
     )
 
@@ -122,7 +121,8 @@ def profile_problem(
 ) -> ProblemProfile:
     """
     Main entry point for Phase 1.
-    Prefer LLM when OPENAI_API_KEY is set; otherwise heuristic offline profiler.
+    Known classic shapes stay on the heuristic profiler. The LLM path is
+    only for unmatched problems.
     """
     if not user_text or not user_text.strip():
         return ProblemProfile(
@@ -133,7 +133,11 @@ def profile_problem(
             missing_constraints=["A non-empty problem description is required."],
         )
 
+    from src.problem_shapes import detect_shape
     from src.llm_client import has_llm_backend
+
+    if detect_shape(user_text) is not None:
+        return _heuristic_profile(user_text)
 
     if has_llm_backend():
         try:

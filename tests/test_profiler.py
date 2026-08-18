@@ -73,3 +73,15 @@ def test_empty_problem_requires_clarification():
     result = run_oracle("")
     assert result["needs_clarification"] is True
     assert result["classification"] is None
+
+
+def test_known_shape_does_not_call_llm_profiler(monkeypatch):
+    monkeypatch.setattr("src.llm_client.has_llm_backend", lambda: True)
+
+    def boom(*_a, **_k):
+        raise AssertionError("LLM must not run for a known shape")
+
+    monkeypatch.setattr("src.profiler._llm_profile", boom)
+    profile = profile_problem(SPECIFIED_LIS)
+    assert profile.input_type == "array"
+    assert needs_clarification(profile) is False

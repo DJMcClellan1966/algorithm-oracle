@@ -175,3 +175,25 @@ def test_paradigm_alone_does_not_select_lis_explanation():
     why = explanation.textbook_why.lower()
     assert "longest increasing" not in why
     assert explanation.why_alternatives_fail
+
+
+def test_templated_shape_does_not_call_llm_explainer(monkeypatch):
+    monkeypatch.setattr("src.llm_client.has_llm_backend", lambda: True)
+
+    def boom(*_a, **_k):
+        raise AssertionError("LLM must not run for a templated explanation")
+
+    monkeypatch.setattr("src.explainer._llm_explain", boom)
+    explanation = _explain_example(_by_id()["lis"])
+    assert "dp[i]" in explanation.textbook_why
+
+
+def test_every_paradigm_argument_template_is_defined():
+    from src.explainer import load_taxonomy
+
+    taxonomy = load_taxonomy()
+    templates = taxonomy["argument_templates"]
+    for paradigm in taxonomy["paradigms"]:
+        key = paradigm["argument_template"]
+        body = templates.get(key)
+        assert body and str(body).strip(), f"missing argument template {key!r}"
