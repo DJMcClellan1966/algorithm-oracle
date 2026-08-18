@@ -76,5 +76,11 @@
     "problem": "You are climbing a staircase with n steps. Each time you can climb either 1 or 2 steps. Return the number of distinct ways to climb to the top.",
     "expected_paradigm_id": "math_formula",
     "notes": "Classic linear-recurrence counting problem (LeetCode 'Climbing Stairs'); reduces to a Fibonacci-shaped recurrence, no search needed."
+  },
+  {
+    "id": "n_queens_count",
+    "problem": "The n-queens puzzle asks you to place n queens on an n x n chessboard so that no two queens attack each other (same row, column, or diagonal). Return the number of distinct solutions for a given n.",
+    "expected_paradigm_id": "backtracking",
+    "notes": "Classic backtracking with pruning (LeetCode 'N-Queens II'); counting variant keeps the answer a single deterministic integer."
   }
 ]

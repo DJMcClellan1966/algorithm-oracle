@@ -22,6 +22,7 @@ from verification.harness import (
     generate_adversarial_intervals,
     generate_adversarial_koko,
     generate_adversarial_pairs,
+    generate_adversarial_queens_counts,
     generate_adversarial_stair_counts,
     generate_adversarial_tree_plus_edge,
     generate_adversarial_weighted_digraphs,
@@ -29,6 +30,7 @@ from verification.harness import (
     generate_random_intervals,
     generate_random_koko,
     generate_random_pairs,
+    generate_random_queens_count,
     generate_random_stair_count,
     generate_random_tree_plus_edge,
     generate_random_weighted_digraph,
@@ -154,6 +156,16 @@ def test_stair_count_generators_have_valid_shapes():
     assert by_desc["one step"] == 1
 
 
+def test_queens_count_generators_have_valid_shapes():
+    random.seed(1)
+    for _ in range(15):
+        n = generate_random_queens_count()
+        assert 0 <= n <= 7
+    adv = generate_adversarial_queens_counts()
+    by_desc = {c["desc"]: c["input"] for c in adv}
+    assert by_desc["n=2, provably no solution"] == 2
+
+
 def test_weighted_digraph_generators_have_valid_shapes():
     random.seed(1)
     for n in range(1, 7):
@@ -180,6 +192,7 @@ def test_weighted_digraph_generators_have_valid_shapes():
         ("union_find", generate_adversarial_tree_plus_edge),
         ("shortest_path", generate_adversarial_weighted_digraphs),
         ("math_formula", generate_adversarial_stair_counts),
+        ("backtracking", generate_adversarial_queens_counts),
     ],
 )
 def test_paradigm_runner_uses_named_generators(paradigm_id, adversarial_fn):
@@ -207,6 +220,7 @@ def test_paradigm_adversarial_counts_are_distinct():
         len(generate_adversarial_tree_plus_edge()),
         len(generate_adversarial_weighted_digraphs()),
         len(generate_adversarial_stair_counts()),
+        len(generate_adversarial_queens_counts()),
     ]
     assert len(set(counts)) == len(counts)
 
@@ -223,6 +237,7 @@ def test_paradigm_adversarial_counts_are_distinct():
         ("union_find", generate_adversarial_tree_plus_edge),
         ("shortest_path", generate_adversarial_weighted_digraphs),
         ("math_formula", generate_adversarial_stair_counts),
+        ("backtracking", generate_adversarial_queens_counts),
         ("not_a_real_paradigm", generate_adversarial_arrays),
     ],
 )

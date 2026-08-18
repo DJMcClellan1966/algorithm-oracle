@@ -29,6 +29,7 @@ from src.problem_shapes import detect_shape, SHAPE_PARADIGM
         ("Use Union-Find to find the redundant connection in this graph.", "redundant_connection"),
         ("Find the shortest path using Dijkstra's algorithm.", "network_delay"),
         ("You are climbing stairs and can take 1 or 2 steps at a time.", "climbing_stairs"),
+        ("Solve the classic n-queens puzzle and count the solutions.", "n_queens"),
     ],
 )
 def test_detect_shape_canonical_phrasings(text, expected_shape):

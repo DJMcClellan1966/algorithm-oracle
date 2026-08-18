@@ -74,6 +74,16 @@ _SHAPE_DETAILS: dict[str, dict] = {
             "online or offline": "Online – edges are processed one at a time in the given order.",
         },
     },
+    "n_queens": {
+        "rejected": [
+            RejectedParadigm(paradigm_id="dp_optimal_substructure", reason="Placements don't decompose into independent overlapping subproblems; the constraint is global across rows, columns, and diagonals."),
+            RejectedParadigm(paradigm_id="greedy_exchange", reason="A locally safe placement can still dead-end the whole board; committing early requires the ability to undo it."),
+        ],
+        "answers": {
+            "large but structured search space": "Yes – n^n raw placements, pruned hard by row/column/diagonal conflicts.",
+            "can partial solutions be rejected early": "Yes – a queen placed in row r that conflicts with any placed queen prunes the entire subtree below it.",
+        },
+    },
     "climbing_stairs": {
         "rejected": [
             RejectedParadigm(paradigm_id="dp_optimal_substructure", reason="A full memoized table is unnecessary; the recurrence only ever needs the last two values."),

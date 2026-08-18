@@ -68,6 +68,12 @@ END_TO_END = [
         "math_formula",
         "passed",
     ),
+    (
+        "Solve the n-queens puzzle: place n queens on an n x n board so none "
+        "attack each other, and return the number of distinct solutions.",
+        "backtracking",
+        "passed",
+    ),
 ]
 
 

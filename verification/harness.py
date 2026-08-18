@@ -249,6 +249,16 @@ def generate_random_stair_count(max_n: int = 12) -> int:
     return random.randint(0, max_n)
 
 
+def generate_random_queens_count(max_n: int = 7) -> int:
+    return random.randint(0, max_n)
+
+
+def generate_adversarial_queens_counts() -> list[dict]:
+    return [
+        {"desc": "n=2, provably no solution", "input": 2},
+    ]
+
+
 def generate_adversarial_stair_counts() -> list[dict]:
     return [
         {"desc": "zero steps", "input": 0},
@@ -477,6 +487,9 @@ def run_verification_for_paradigm(
     elif paradigm_id == "math_formula":
         random_inputs = [generate_random_stair_count() for _ in range(num_random)]
         adv = generate_adversarial_stair_counts()
+    elif paradigm_id == "backtracking":
+        random_inputs = [generate_random_queens_count() for _ in range(num_random)]
+        adv = generate_adversarial_queens_counts()
     else:
         return run_verification(
             candidate, reference, random_n_range=(0, 8), num_random=num_random

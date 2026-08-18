@@ -780,7 +780,93 @@ function solve(n):
     )
 
 
+def _template_n_queens() -> ConcreteAlgorithm:
+    reference = '''\
+def solve(n):
+    if n == 0:
+        return 1
+
+    def permutations(items):
+        if len(items) <= 1:
+            return [items]
+        result = []
+        for i in range(len(items)):
+            rest = items[:i] + items[i + 1:]
+            for p in permutations(rest):
+                result.append([items[i]] + p)
+        return result
+
+    count = 0
+    for perm in permutations(list(range(n))):
+        safe = True
+        for i in range(n):
+            for j in range(i + 1, n):
+                if abs(perm[i] - perm[j]) == abs(i - j):
+                    safe = False
+                    break
+            if not safe:
+                break
+        if safe:
+            count += 1
+    return count
+'''
+    candidate = '''\
+def solve(n):
+    if n == 0:
+        return 1
+    cols = set()
+    diag1 = set()
+    diag2 = set()
+    count = 0
+    def backtrack(row):
+        nonlocal count
+        if row == n:
+            count += 1
+            return
+        for col in range(n):
+            d1 = row - col
+            d2 = row + col
+            if col in cols or d1 in diag1 or d2 in diag2:
+                continue
+            cols.add(col); diag1.add(d1); diag2.add(d2)
+            backtrack(row + 1)
+            cols.discard(col); diag1.discard(d1); diag2.discard(d2)
+    backtrack(0)
+    return count
+'''
+    return ConcreteAlgorithm(
+        paradigm_id="backtracking",
+        loop_invariant_or_key_insight=(
+            "Every partial placement of queens in rows 0..row-1 is conflict-free before row "
+            "is attempted (row/column/diagonal sets track exactly what's occupied). The moment "
+            "a candidate column conflicts with any already-placed queen, the entire subtree "
+            "below that choice is abandoned without ever being built -- unlike the brute-force "
+            "reference, which fully constructs every column permutation before checking safety."
+        ),
+        pseudocode="""\
+function solve(n):
+    if n == 0: return 1
+    cols, diag1, diag2 = {}, {}, {}   # occupied columns / rising / falling diagonals
+    count = 0
+    function backtrack(row):
+        if row == n: count += 1; return
+        for col in 0..n-1:
+            if col in cols or (row-col) in diag1 or (row+col) in diag2:
+                continue          # prune: this branch can never succeed
+            place queen at (row, col); backtrack(row + 1); remove queen
+    backtrack(0)
+    return count
+""",
+        time_complexity="Worst case O(n!) but heavily pruned in practice; reference is a strict O(n! * n^2)",
+        space_complexity="O(n)",
+        brute_force_reference=reference.strip(),
+        python_candidate=candidate.strip(),
+        notes="N-Queens solution count (backtracking) template.",
+    )
+
+
 TEMPLATES = {
+    "n_queens": _template_n_queens,
     "climbing_stairs": _template_climbing_stairs,
     "network_delay": _template_network_delay,
     "redundant_connection": _template_redundant_connection,

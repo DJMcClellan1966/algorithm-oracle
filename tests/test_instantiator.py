@@ -36,6 +36,7 @@ TEMPLATE_MARKERS = {
     "redundant_connection": "Union-Find",
     "network_delay": "Dijkstra",
     "climbing_stairs": "Climbing Stairs",
+    "n_queens_count": "N-Queens",
 }
 
 

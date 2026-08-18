@@ -284,6 +284,25 @@ DFS three-coloring also works for cycle detection, but Union-Find cannot produce
     )
 
 
+def _explain_n_queens(profile, classification, algorithm, verification):
+    why = """Place queens one row at a time, tracking which columns and which of the two diagonal families are already occupied by a previously placed queen.
+
+Invariant: whenever backtrack(row) is called, every queen placed in rows 0..row-1 is mutually non-attacking. Initialization holds trivially with zero queens placed. At each row, a column is only tried if it doesn't collide with an occupied column or either diagonal set -- so any queen actually placed preserves the invariant. When a row has no safe column left, the search undoes the most recent placement and tries the next option there, which is exactly what makes this backtracking rather than a one-pass greedy attempt: a locally safe choice can still lead to a dead end several rows later, and only undoing it (not just moving on) can reach the solutions that require a different earlier choice.
+
+The pruning is the entire point: the search abandons a partial placement the instant a conflict appears, rather than completing a full assignment and checking it afterward -- which is exactly the difference between this candidate and the brute-force reference, which enumerates every column permutation in full before testing safety."""
+    return Explanation(
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
+        textbook_why=why.strip() + "\n\n" + _verification_note(verification),
+        why_alternatives_fail=_contrastive_from_rejections(classification),
+        edge_cases_discussed=[
+            "n = 0 → 1 (the empty placement is the one trivial solution).",
+            "n = 2 or n = 3 → 0 (provably no arrangement avoids every conflict).",
+            "n = 4 → 2 (the smallest board with any real solutions).",
+        ],
+    )
+
+
 def _explain_climbing_stairs(profile, classification, algorithm, verification):
     why = """The last step taken to reach stair n is either a single step from stair n-1 or a double step from stair n-2 -- every way to reach n ends in exactly one of these two cases, and the cases never overlap.
 
@@ -355,6 +374,7 @@ _SHAPE_EXPLAINERS = {
     "redundant_connection": _explain_redundant_connection,
     "network_delay": _explain_network_delay,
     "climbing_stairs": _explain_climbing_stairs,
+    "n_queens": _explain_n_queens,
 }
 
 

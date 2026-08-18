@@ -35,6 +35,7 @@ EXPLAINER_EXPECTATIONS = {
     "redundant_connection": ("component_invariant", "disjoint-set"),
     "network_delay": ("cut_property_or_relaxation", "Dijkstra"),
     "climbing_stairs": ("mathematical_derivation", "Binet"),
+    "n_queens_count": ("search_tree_pruning", "dead end"),
 }
 
 
