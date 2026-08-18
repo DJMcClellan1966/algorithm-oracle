@@ -66,6 +66,26 @@ def test_no_match_returns_none():
     assert detect_shape("Compute an optimal value using dynamic programming.") is None
 
 
+def test_lis_token_does_not_match_the_word_list():
+    """Bare substring 'lis' is a prefix of 'list'; that must not become LIS."""
+    assert detect_shape("Given a list of numbers, compute their sum.") is None
+    assert detect_shape("Return the sum of a list of integers.") is None
+
+
+def test_list_of_integers_two_sum_is_not_lis():
+    assert (
+        detect_shape(
+            "Given a list of integers, determine whether any two elements sum to the target."
+        )
+        == "two_sum"
+    )
+
+
+def test_lis_as_its_own_word_still_matches():
+    assert detect_shape("Compute the LIS of the array.") == "lis"
+    assert detect_shape("Classic LIS length.") == "lis"
+
+
 def test_every_shape_maps_to_a_taxonomy_paradigm():
     from src.classifier import load_taxonomy
 

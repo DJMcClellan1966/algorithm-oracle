@@ -17,6 +17,10 @@ from verification.harness import (
     _LIS_BUGGY,
     _LIS_CANDIDATE,
     _LIS_REFERENCE,
+    _is_feasible_activity_selection,
+    _is_valid_topological_order,
+    _normalize_activity_output,
+    _normalize_graph_output,
     generate_adversarial_arrays,
     generate_adversarial_digraphs,
     generate_adversarial_intervals,
@@ -337,3 +341,159 @@ def test_paradigm_runner_routes_by_paradigm_id(paradigm_id, adversarial_fn):
         f"expected {len(adversarial_fn())} from {adversarial_fn.__name__}"
     )
     assert report.status == "passed", report.message
+
+
+_VALID_TOPO = """
+def solve(graph):
+    nodes = list(dict.fromkeys([*graph.keys(), *[v for u in graph for v in graph[u]]]))
+    indeg = {u: 0 for u in nodes}
+    for u in nodes:
+        for v in graph.get(u, []):
+            if v not in indeg:
+                indeg[v] = 0
+            indeg[v] += 1
+    q = [u for u in indeg if indeg[u] == 0]
+    order = []
+    i = 0
+    while i < len(q):
+        u = q[i]
+        i += 1
+        order.append(u)
+        for v in graph.get(u, []):
+            indeg[v] -= 1
+            if indeg[v] == 0:
+                q.append(v)
+    if len(order) != len(indeg):
+        return None
+    return order
+"""
+
+_KEY_ORDER_TOPO = """
+def solve(graph):
+    return list(graph.keys())
+"""
+
+_GREEDY_ACTIVITY = """
+def solve(activities):
+    if not activities:
+        return []
+    ordered = sorted(activities, key=lambda x: x[1])
+    result = []
+    last_finish = float("-inf")
+    for start, finish in ordered:
+        if start >= last_finish:
+            result.append((start, finish))
+            last_finish = finish
+    return result
+"""
+
+_SAME_COUNT_OVERLAP_ACTIVITY = """
+def solve(activities):
+    if not activities:
+        return []
+    ordered = sorted(activities, key=lambda x: x[1])
+    result = []
+    last_finish = float("-inf")
+    for start, finish in ordered:
+        if start >= last_finish:
+            result.append((start, finish))
+            last_finish = finish
+    k = len(result)
+    return list(activities[:k])
+"""
+
+_HANGING_SOLVE = """
+def solve(x):
+    while True:
+        pass
+"""
+
+_FIXED_INVALID_DAG = {2: [0], 0: [], 1: [2]}
+_FIXED_OVERLAP_GROUPS = [(0, 2), (1, 3), (10, 12), (11, 13)]
+
+
+def test_invalid_topo_of_same_length_is_not_valid():
+    bad = [2, 0, 1]
+    good = [1, 2, 0]
+    assert _is_valid_topological_order(_FIXED_INVALID_DAG, good)
+    assert not _is_valid_topological_order(_FIXED_INVALID_DAG, bad)
+    assert _normalize_graph_output(_FIXED_INVALID_DAG, bad) != _normalize_graph_output(
+        _FIXED_INVALID_DAG, good
+    )
+
+
+def test_two_valid_topo_orders_normalize_equal():
+    graph = {0: [2], 1: [2], 2: []}
+    left = [0, 1, 2]
+    right = [1, 0, 2]
+    assert _is_valid_topological_order(graph, left)
+    assert _is_valid_topological_order(graph, right)
+    assert _normalize_graph_output(graph, left) == _normalize_graph_output(graph, right)
+
+
+def test_infeasible_activity_of_optimal_size_is_rejected():
+    selected = [(0, 2), (1, 3)]
+    assert not _is_feasible_activity_selection(_FIXED_OVERLAP_GROUPS, selected)
+    feasible = [(0, 2), (10, 12)]
+    assert _is_feasible_activity_selection(_FIXED_OVERLAP_GROUPS, feasible)
+    assert _normalize_activity_output(_FIXED_OVERLAP_GROUPS, selected) != _normalize_activity_output(
+        _FIXED_OVERLAP_GROUPS, feasible
+    )
+
+
+def test_two_optimal_activity_sets_normalize_equal():
+    a = [(0, 2), (10, 12)]
+    b = [(0, 2), (11, 13)]
+    assert _is_feasible_activity_selection(_FIXED_OVERLAP_GROUPS, a)
+    assert _is_feasible_activity_selection(_FIXED_OVERLAP_GROUPS, b)
+    assert _normalize_activity_output(_FIXED_OVERLAP_GROUPS, a) == _normalize_activity_output(
+        _FIXED_OVERLAP_GROUPS, b
+    )
+
+
+def test_key_order_topo_fails_against_valid_reference(monkeypatch):
+    """Length-only comparison would pass; a real topo check must fail."""
+    monkeypatch.setattr(
+        "verification.harness.generate_random_digraph",
+        lambda n, p=0.25: _FIXED_INVALID_DAG,
+    )
+    monkeypatch.setattr(
+        "verification.harness.generate_adversarial_digraphs",
+        lambda: [{"desc": "fixed-invalid-key-order", "input": _FIXED_INVALID_DAG}],
+    )
+    report = run_verification_for_paradigm(
+        _KEY_ORDER_TOPO, _VALID_TOPO, "graph_traversal", num_random=3
+    )
+    assert report.status == "failed", report.message
+    assert report.failed_cases
+
+
+def test_overlapping_same_count_activity_fails_against_greedy(monkeypatch):
+    monkeypatch.setattr(
+        "verification.harness.generate_random_intervals",
+        lambda n, time_max=40: list(_FIXED_OVERLAP_GROUPS),
+    )
+    monkeypatch.setattr(
+        "verification.harness.generate_adversarial_intervals",
+        lambda: [{"desc": "two disjoint groups", "input": list(_FIXED_OVERLAP_GROUPS)}],
+    )
+    report = run_verification_for_paradigm(
+        _SAME_COUNT_OVERLAP_ACTIVITY, _GREEDY_ACTIVITY, "greedy_exchange", num_random=3
+    )
+    assert report.status == "failed", report.message
+    assert report.failed_cases
+
+
+def test_hanging_candidate_fails_with_timeout():
+    report = run_verification_from_source(
+        _HANGING_SOLVE,
+        _IDENTITY_SOLVE,
+        random_n_range=(1, 1),
+        num_random=1,
+        include_adversarial=False,
+        call_timeout_s=0.3,
+    )
+    assert report.status == "failed", report.message
+    assert report.failed_cases
+    actual = str(report.failed_cases[0].actual)
+    assert "Timeout" in actual

@@ -12,6 +12,7 @@ to feed it and what to do with the shape they get back.
 
 from __future__ import annotations
 
+import re
 from typing import Optional
 
 # Order matters only where one shape's keywords are a subset of another's
@@ -59,16 +60,27 @@ SHAPE_PARADIGM = {
 }
 
 
+def _has_keyword(lower: str, keyword: str) -> bool:
+    """Substring match for phrases; whole-word match for single alphanumeric tokens.
+
+    Bare ``"lis" in "list"`` is True in Python, so a substring check would
+    classify every "list of …" problem as LIS.
+    """
+    if re.fullmatch(r"[a-z0-9]+", keyword):
+        return re.search(rf"\b{re.escape(keyword)}\b", lower) is not None
+    return keyword in lower
+
+
 def detect_shape(text: str) -> Optional[str]:
     """Return the canonical shape id for a text blob, or None if nothing matches."""
     lower = text.lower()
 
     for shape_id, keywords in _SHAPES:
-        if any(w in lower for w in keywords):
+        if any(_has_keyword(lower, w) for w in keywords):
             return shape_id
 
-    if any(w in lower for w in _COIN_CHANGE_KEYWORDS) and any(
-        w in lower for w in _COIN_CHANGE_CANONICAL_CUES
+    if any(_has_keyword(lower, w) for w in _COIN_CHANGE_KEYWORDS) and any(
+        _has_keyword(lower, w) for w in _COIN_CHANGE_CANONICAL_CUES
     ):
         return "coin_change"
 

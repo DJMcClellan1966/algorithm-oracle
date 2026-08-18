@@ -16,12 +16,18 @@ Safety notes:
 
 from __future__ import annotations
 
+import multiprocessing
 import random
 import time
 import traceback
+from collections import Counter
 from typing import Any, Callable, List, Optional, Tuple
 
 from schemas.models import TestCaseResult, VerificationReport
+
+# Wall-clock budget for one candidate/reference call when running from source.
+# None disables the process wrapper (in-process callables, no kill).
+DEFAULT_CALL_TIMEOUT_S = 5.0
 
 
 # ---------------------------------------------------------------------------
@@ -102,6 +108,191 @@ def compile_function(
         fn.__globals__.update(globals_dict)
 
     return fn
+
+
+def _compile_fail_report(exc: ValueError) -> VerificationReport:
+    return VerificationReport(
+        status="failed",
+        message=f"Compilation error: {exc}",
+        failed_cases=[
+            TestCaseResult(
+                input_desc="(compile)",
+                expected="successful compile",
+                actual=str(exc),
+                passed=False,
+            )
+        ],
+    )
+
+
+def _timed_eval_server(source: str, function_name: str, in_conn, out_conn) -> None:
+    """Child process: compile once, then eval inputs until the pipe closes."""
+    try:
+        fn = compile_function(source, function_name)
+        while True:
+            try:
+                inp = in_conn.recv()
+            except EOFError:
+                break
+            try:
+                out_conn.send(("ok", fn(inp)))
+            except Exception as e:
+                out_conn.send(("err", type(e).__name__, str(e)))
+    finally:
+        try:
+            in_conn.close()
+        except OSError:
+            pass
+        try:
+            out_conn.close()
+        except OSError:
+            pass
+
+
+class _TimedSourceCaller:
+    """Compile `source` in a spawn-child and kill it if a call exceeds timeout_s."""
+
+    def __init__(self, source: str, function_name: str, timeout_s: float):
+        self.source = source
+        self.function_name = function_name
+        self.timeout_s = timeout_s
+        self._ctx = multiprocessing.get_context("spawn")
+        self._proc = None
+        self._parent_send = None
+        self._parent_recv = None
+        self._start()
+
+    def _start(self) -> None:
+        self.close()
+        child_recv, parent_send = self._ctx.Pipe(duplex=False)
+        parent_recv, child_send = self._ctx.Pipe(duplex=False)
+        self._parent_send = parent_send
+        self._parent_recv = parent_recv
+        self._proc = self._ctx.Process(
+            target=_timed_eval_server,
+            args=(self.source, self.function_name, child_recv, child_send),
+        )
+        self._proc.start()
+        child_recv.close()
+        child_send.close()
+
+    def call(self, inp: Any) -> Any:
+        if self._proc is None or not self._proc.is_alive():
+            self._start()
+        try:
+            self._parent_send.send(inp)
+        except (BrokenPipeError, OSError, EOFError):
+            self._start()
+            self._parent_send.send(inp)
+        if self._parent_recv.poll(self.timeout_s):
+            msg = self._parent_recv.recv()
+            if msg[0] == "ok":
+                return msg[1]
+            raise RuntimeError(f"{msg[1]}: {msg[2]}")
+        self.close()
+        raise TimeoutError(f"solve exceeded {self.timeout_s}s")
+
+    def close(self) -> None:
+        proc = self._proc
+        self._proc = None
+        if proc is not None and proc.is_alive():
+            proc.terminate()
+            proc.join(1)
+            if proc.is_alive():
+                proc.kill()
+                proc.join(1)
+        for conn in (self._parent_send, self._parent_recv):
+            if conn is not None:
+                try:
+                    conn.close()
+                except OSError:
+                    pass
+        self._parent_send = None
+        self._parent_recv = None
+
+
+def _solvers_from_source(
+    candidate_source: str,
+    reference_source: str,
+    function_name: str,
+    call_timeout_s: Optional[float],
+) -> Tuple[Optional[Callable], Optional[Callable], Callable[[], None], Optional[VerificationReport]]:
+    """Compile-check both sources. On success, return callables plus a cleanup hook."""
+    try:
+        inproc_c = compile_function(candidate_source, function_name)
+        inproc_r = compile_function(reference_source, function_name)
+    except ValueError as e:
+        return None, None, lambda: None, _compile_fail_report(e)
+    if call_timeout_s is None:
+        return inproc_c, inproc_r, lambda: None, None
+    cand = _TimedSourceCaller(candidate_source, function_name, call_timeout_s)
+    ref = _TimedSourceCaller(reference_source, function_name, call_timeout_s)
+    return cand.call, ref.call, lambda: (cand.close(), ref.close()), None
+
+
+def _interval_pair(item: Any) -> Optional[tuple]:
+    if isinstance(item, (list, tuple)) and len(item) == 2:
+        return (item[0], item[1])
+    return None
+
+
+def _is_feasible_activity_selection(intervals: Any, selected: Any) -> bool:
+    """True iff selected is a non-overlapping submultiset of intervals.
+
+    Touching endpoints (finish == next start) are allowed, matching the
+    activity-selection template's `start >= last_finish` rule.
+    """
+    if not isinstance(selected, (list, tuple)):
+        return False
+    normalized: list[tuple] = []
+    for item in selected:
+        pair = _interval_pair(item)
+        if pair is None:
+            return False
+        normalized.append(pair)
+    available = Counter(
+        p for p in (_interval_pair(x) for x in intervals) if p is not None
+    )
+    used = Counter(normalized)
+    for iv, cnt in used.items():
+        if cnt > available.get(iv, 0):
+            return False
+    ordered = sorted(normalized, key=lambda x: (x[0], x[1]))
+    for i in range(len(ordered) - 1):
+        if ordered[i][1] > ordered[i + 1][0]:
+            return False
+    return True
+
+
+def _is_valid_topological_order(graph: Any, order: Any) -> bool:
+    """True iff order is a permutation of the graph's nodes and respects every edge."""
+    if not isinstance(order, (list, tuple)) or not isinstance(graph, dict):
+        return False
+    nodes = list(
+        dict.fromkeys(
+            [*graph.keys(), *[v for u in graph for v in graph.get(u, [])]]
+        )
+    )
+    if len(order) != len(nodes) or set(order) != set(nodes):
+        return False
+    rank = {node: i for i, node in enumerate(order)}
+    for u in graph:
+        for v in graph.get(u, []):
+            if rank[u] >= rank[v]:
+                return False
+    return True
+
+
+def _normalize_activity_output(inp: Any, out: Any) -> Any:
+    if not isinstance(out, (list, tuple)):
+        return out
+    return (_is_feasible_activity_selection(inp, out), len(out))
+
+
+def _normalize_graph_output(inp: Any, out: Any) -> Any:
+    if isinstance(out, (list, tuple)):
+        return ("order", _is_valid_topological_order(inp, out), len(out))
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -461,30 +652,22 @@ def run_verification_from_source(
     reference_source: str,
     *,
     function_name: str = "solve",
+    call_timeout_s: Optional[float] = DEFAULT_CALL_TIMEOUT_S,
     **kwargs,
 ) -> VerificationReport:
     """
     Compile both sources then run differential testing.
     This is the entry point the pipeline will usually call.
     """
+    candidate, reference, cleanup, err = _solvers_from_source(
+        candidate_source, reference_source, function_name, call_timeout_s
+    )
+    if err is not None:
+        return err
     try:
-        candidate = compile_function(candidate_source, function_name)
-        reference = compile_function(reference_source, function_name)
-    except ValueError as e:
-        return VerificationReport(
-            status="failed",
-            message=f"Compilation error: {e}",
-            failed_cases=[
-                TestCaseResult(
-                    input_desc="(compile)",
-                    expected="successful compile",
-                    actual=str(e),
-                    passed=False,
-                )
-            ],
-        )
-
-    return run_verification(candidate, reference, **kwargs)
+        return run_verification(candidate, reference, **kwargs)
+    finally:
+        cleanup()
 
 
 def run_verification_for_paradigm(
@@ -494,102 +677,93 @@ def run_verification_for_paradigm(
     *,
     function_name: str = "solve",
     num_random: int = 20,
+    call_timeout_s: Optional[float] = DEFAULT_CALL_TIMEOUT_S,
 ) -> VerificationReport:
     """
     Choose input generators based on paradigm / problem shape, then differentially test.
     """
-    try:
-        candidate = compile_function(candidate_source, function_name)
-        reference = compile_function(reference_source, function_name)
-    except ValueError as e:
-        return VerificationReport(
-            status="failed",
-            message=f"Compilation error: {e}",
-            failed_cases=[
-                TestCaseResult(
-                    input_desc="(compile)",
-                    expected="successful compile",
-                    actual=str(e),
-                    passed=False,
-                )
-            ],
-        )
-
-    # --- select generators ---
-    if paradigm_id == "greedy_exchange":
-        random_inputs = [generate_random_intervals(random.randint(0, 8)) for _ in range(num_random)]
-        adv = generate_adversarial_intervals()
-
-        def wrap(fn):
-            def _inner(inp):
-                out = fn(inp)
-                return len(out) if isinstance(out, list) else out
-            return _inner
-
-        candidate, reference = wrap(candidate), wrap(reference)
-    elif paradigm_id == "graph_traversal":
-        random_inputs = [generate_random_digraph(random.randint(0, 5), 0.25) for _ in range(num_random)]
-        adv = generate_adversarial_digraphs()
-
-        def wrap_topo_or_cycle(fn):
-            def _inner(inp):
-                out = fn(inp)
-                if isinstance(out, list):
-                    return ("order", len(out))
-                return out
-            return _inner
-
-        candidate, reference = wrap_topo_or_cycle(candidate), wrap_topo_or_cycle(reference)
-    elif paradigm_id == "binary_search":
-        random_inputs = [generate_random_koko(random.randint(1, 5)) for _ in range(num_random)]
-        adv = generate_adversarial_koko()
-    elif paradigm_id == "two_pointers_sliding":
-        random_inputs = [generate_random_pairs(random.randint(0, 10)) for _ in range(num_random)]
-        adv = generate_adversarial_pairs()
-    elif paradigm_id == "union_find":
-        random_inputs = [generate_random_tree_plus_edge(random.randint(3, 8)) for _ in range(num_random)]
-        adv = generate_adversarial_tree_plus_edge()
-    elif paradigm_id == "shortest_path":
-        random_inputs = [generate_random_weighted_digraph(random.randint(1, 6)) for _ in range(num_random)]
-        adv = generate_adversarial_weighted_digraphs()
-    elif paradigm_id == "math_formula":
-        random_inputs = [generate_random_stair_count() for _ in range(num_random)]
-        adv = generate_adversarial_stair_counts()
-    elif paradigm_id == "backtracking":
-        random_inputs = [generate_random_queens_count() for _ in range(num_random)]
-        adv = generate_adversarial_queens_counts()
-    elif paradigm_id == "network_flow":
-        random_inputs = [generate_random_flow_network(random.randint(2, 6)) for _ in range(num_random)]
-        adv = generate_adversarial_flow_networks()
-    else:
-        return run_verification(
-            candidate, reference, random_n_range=(0, 8), num_random=num_random
-        )
-
-    passed_r, failed_r = differential_test(candidate, reference, random_inputs)
-    passed_a, failed_a = differential_test(
-        candidate, reference, [c["input"] for c in adv], [c["desc"] for c in adv]
+    candidate, reference, cleanup, err = _solvers_from_source(
+        candidate_source, reference_source, function_name, call_timeout_s
     )
-    total = num_random + len(adv)
-    total_passed = passed_r + passed_a
-    failed = failed_r + failed_a
-    if failed:
+    if err is not None:
+        return err
+
+    try:
+        # --- select generators ---
+        if paradigm_id == "greedy_exchange":
+            random_inputs = [generate_random_intervals(random.randint(0, 8)) for _ in range(num_random)]
+            adv = generate_adversarial_intervals()
+
+            def wrap(fn):
+                def _inner(inp):
+                    out = fn(inp)
+                    return _normalize_activity_output(inp, out)
+                return _inner
+
+            candidate, reference = wrap(candidate), wrap(reference)
+        elif paradigm_id == "graph_traversal":
+            random_inputs = [generate_random_digraph(random.randint(0, 5), 0.25) for _ in range(num_random)]
+            adv = generate_adversarial_digraphs()
+
+            def wrap_topo_or_cycle(fn):
+                def _inner(inp):
+                    out = fn(inp)
+                    return _normalize_graph_output(inp, out)
+                return _inner
+
+            candidate, reference = wrap_topo_or_cycle(candidate), wrap_topo_or_cycle(reference)
+        elif paradigm_id == "binary_search":
+            random_inputs = [generate_random_koko(random.randint(1, 5)) for _ in range(num_random)]
+            adv = generate_adversarial_koko()
+        elif paradigm_id == "two_pointers_sliding":
+            random_inputs = [generate_random_pairs(random.randint(0, 10)) for _ in range(num_random)]
+            adv = generate_adversarial_pairs()
+        elif paradigm_id == "union_find":
+            random_inputs = [generate_random_tree_plus_edge(random.randint(3, 8)) for _ in range(num_random)]
+            adv = generate_adversarial_tree_plus_edge()
+        elif paradigm_id == "shortest_path":
+            random_inputs = [generate_random_weighted_digraph(random.randint(1, 6)) for _ in range(num_random)]
+            adv = generate_adversarial_weighted_digraphs()
+        elif paradigm_id == "math_formula":
+            random_inputs = [generate_random_stair_count() for _ in range(num_random)]
+            adv = generate_adversarial_stair_counts()
+        elif paradigm_id == "backtracking":
+            random_inputs = [generate_random_queens_count() for _ in range(num_random)]
+            adv = generate_adversarial_queens_counts()
+        elif paradigm_id == "network_flow":
+            random_inputs = [generate_random_flow_network(random.randint(2, 6)) for _ in range(num_random)]
+            adv = generate_adversarial_flow_networks()
+        else:
+            return run_verification(
+                candidate, reference, random_n_range=(0, 8), num_random=num_random
+            )
+
+        passed_r, failed_r = differential_test(candidate, reference, random_inputs)
+        passed_a, failed_a = differential_test(
+            candidate, reference, [c["input"] for c in adv], [c["desc"] for c in adv]
+        )
+        total = num_random + len(adv)
+        total_passed = passed_r + passed_a
+        failed = failed_r + failed_a
+        if failed:
+            return VerificationReport(
+                status="failed",
+                num_random_tests=num_random,
+                num_adversarial_tests=len(adv),
+                passed_count=total_passed,
+                failed_cases=failed,
+                message=f"Failed {len(failed)} / {total} tests",
+            )
         return VerificationReport(
-            status="failed",
+            status="passed",
             num_random_tests=num_random,
             num_adversarial_tests=len(adv),
             passed_count=total_passed,
-            failed_cases=failed,
-            message=f"Failed {len(failed)} / {total} tests",
+            failed_cases=[],
+            message=f"Passed all {total} tests (random + adversarial)",
         )
-    return VerificationReport(
-        status="passed",
-        num_random_tests=num_random,
-        num_adversarial_tests=len(adv),
-        passed_count=total_passed,
-        failed_cases=[],
-        message=f"Passed all {total} tests (random + adversarial)",
-    )
+    finally:
+        cleanup()
 
 
 def run_verification_for_shape(
@@ -600,6 +774,7 @@ def run_verification_for_shape(
     *,
     function_name: str = "solve",
     num_random: int = 15,
+    call_timeout_s: Optional[float] = DEFAULT_CALL_TIMEOUT_S,
 ) -> VerificationReport:
     """
     Some paradigm ids cover more than one input shape -- dp_optimal_substructure
@@ -621,50 +796,43 @@ def run_verification_for_shape(
             paradigm_id,
             function_name=function_name,
             num_random=num_random,
+            call_timeout_s=call_timeout_s,
         )
+
+    candidate, reference, cleanup, err = _solvers_from_source(
+        candidate_source, reference_source, function_name, call_timeout_s
+    )
+    if err is not None:
+        return err
 
     try:
-        candidate = compile_function(candidate_source, function_name)
-        reference = compile_function(reference_source, function_name)
-    except ValueError as e:
-        return VerificationReport(
-            status="failed",
-            message=f"Compilation error: {e}",
-            failed_cases=[
-                TestCaseResult(
-                    input_desc="(compile)",
-                    expected="successful compile",
-                    actual=str(e),
-                    passed=False,
-                )
-            ],
+        random_inputs = [random_gen() for _ in range(num_random)]
+        passed_r, failed_r = differential_test(candidate, reference, random_inputs)
+        passed_a, failed_a = differential_test(
+            candidate, reference, [c["input"] for c in adv], [c["desc"] for c in adv]
         )
-
-    random_inputs = [random_gen() for _ in range(num_random)]
-    passed_r, failed_r = differential_test(candidate, reference, random_inputs)
-    passed_a, failed_a = differential_test(
-        candidate, reference, [c["input"] for c in adv], [c["desc"] for c in adv]
-    )
-    total = num_random + len(adv)
-    total_passed = passed_r + passed_a
-    failed = failed_r + failed_a
-    if failed:
+        total = num_random + len(adv)
+        total_passed = passed_r + passed_a
+        failed = failed_r + failed_a
+        if failed:
+            return VerificationReport(
+                status="failed",
+                num_random_tests=num_random,
+                num_adversarial_tests=len(adv),
+                passed_count=total_passed,
+                failed_cases=failed,
+                message=f"Failed {len(failed)} / {total} tests",
+            )
         return VerificationReport(
-            status="failed",
+            status="passed",
             num_random_tests=num_random,
             num_adversarial_tests=len(adv),
             passed_count=total_passed,
-            failed_cases=failed,
-            message=f"Failed {len(failed)} / {total} tests",
+            failed_cases=[],
+            message=f"Passed all {total} tests (random + adversarial)",
         )
-    return VerificationReport(
-        status="passed",
-        num_random_tests=num_random,
-        num_adversarial_tests=len(adv),
-        passed_count=total_passed,
-        failed_cases=[],
-        message=f"Passed all {total} tests (random + adversarial)",
-    )
+    finally:
+        cleanup()
 
 
 def empirical_complexity_sanity(candidate: Callable, max_n: int = 200) -> str:

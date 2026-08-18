@@ -145,3 +145,15 @@ def test_unmatched_problem_does_not_claim_passed():
     assert result["classification"].primary_paradigm_id == "greedy_exchange"
     assert result["algorithm"].python_candidate is None
     assert result["verification"].status == "outside_verifiable_range"
+
+
+def test_generic_list_sum_does_not_claim_verified_lis():
+    """'list' must not be classified as LIS and then false-pass verification."""
+    result = run_oracle("Given a list of numbers, compute their sum.")
+    _assert_full_dict(result, gated=False)
+    notes = (result["algorithm"].notes or "")
+    insight = result["algorithm"].loop_invariant_or_key_insight or ""
+    assert "LIS" not in notes
+    assert "longest increasing" not in insight.lower()
+    assert result["algorithm"].python_candidate is None
+    assert result["verification"].status == "outside_verifiable_range"
