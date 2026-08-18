@@ -27,10 +27,18 @@ from src.problem_shapes import detect_shape, SHAPE_PARADIGM
         ("0/1 knapsack: maximize value under a weight capacity.", "knapsack"),
         ("US coin denominations (1, 5, 10, 25), find the minimum count.", "coin_change"),
         ("Use Union-Find to find the redundant connection in this graph.", "redundant_connection"),
+        ("Find the shortest path using Dijkstra's algorithm.", "network_delay"),
     ],
 )
 def test_detect_shape_canonical_phrasings(text, expected_shape):
     assert detect_shape(text) == expected_shape
+
+
+def test_network_delay_checked_before_cycle():
+    """A shortest-path problem's phrasing can mention a directed graph too;
+    the shortest-path-specific cue must win, not the generic cycle shape."""
+    text = "On this directed weighted graph, find the shortest path from node k."
+    assert detect_shape(text) == "network_delay"
 
 
 def test_topo_checked_before_cycle():

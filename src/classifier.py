@@ -74,6 +74,17 @@ _SHAPE_DETAILS: dict[str, dict] = {
             "online or offline": "Online – edges are processed one at a time in the given order.",
         },
     },
+    "network_delay": {
+        "rejected": [
+            RejectedParadigm(paradigm_id="dp_optimal_substructure", reason="Shortest-path relaxation with a monotonic non-negative-weight invariant is enough; no explicit subproblem table needed."),
+            RejectedParadigm(paradigm_id="graph_traversal", reason="Plain BFS/DFS ignores edge weights; distances require relaxation, not just reachability."),
+        ],
+        "answers": {
+            "edge weights present": "Yes – travel times on directed edges.",
+            "non-negative weights": "Yes – Dijkstra applies; Bellman-Ford would be needed for negative weights.",
+            "single source or all-pairs": "Single source – shortest time from node k to every other node.",
+        },
+    },
     "activity": {
         "rejected": [
             RejectedParadigm(paradigm_id="dp_optimal_substructure", reason="No overlapping subproblems; greedy choice property holds via exchange argument."),

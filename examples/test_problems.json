@@ -64,5 +64,11 @@
     "problem": "You are given a list of edges added one at a time to build a graph on n nodes that started as a tree; exactly one extra edge was added, creating a single cycle. Using Union-Find, identify the redundant edge that can be removed to restore a tree.",
     "expected_paradigm_id": "union_find",
     "notes": "Classic Union-Find / disjoint-set problem (LeetCode 'Redundant Connection')."
+  },
+  {
+    "id": "network_delay",
+    "problem": "You are given n network nodes, a list of directed weighted edges (u, v, w) representing travel times, and a starting node k. Using the shortest path from k, return the minimum time for a signal sent from node k to reach every node, or -1 if some node is unreachable.",
+    "expected_paradigm_id": "shortest_path",
+    "notes": "Classic single-source shortest path (LeetCode 'Network Delay Time'); Dijkstra requires non-negative weights."
   }
 ]

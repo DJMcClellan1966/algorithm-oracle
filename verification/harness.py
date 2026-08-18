@@ -232,6 +232,33 @@ def generate_adversarial_tree_plus_edge() -> list[dict]:
     ]
 
 
+def generate_random_weighted_digraph(n: int, edge_prob: float = 0.4, max_weight: int = 10) -> tuple:
+    """(n, times, k): n nodes labeled 1..n, times = list of (u, v, w) directed
+    edges with non-negative integer weights, k = a random source node."""
+    n = max(1, n)
+    times = []
+    for u in range(1, n + 1):
+        for v in range(1, n + 1):
+            if u != v and random.random() < edge_prob:
+                times.append((u, v, random.randint(1, max_weight)))
+    k = random.randint(1, n)
+    return (n, times, k)
+
+
+def generate_adversarial_weighted_digraphs() -> list[dict]:
+    return [
+        {"desc": "single node", "input": (1, [], 1)},
+        {"desc": "unreachable node", "input": (3, [(1, 2, 5)], 1)},
+        {"desc": "self-loop ignored", "input": (2, [(1, 1, 3), (1, 2, 4)], 1)},
+        {"desc": "chain", "input": (4, [(1, 2, 1), (2, 3, 1), (3, 4, 1)], 1)},
+        {"desc": "two paths, cheaper wins", "input": (3, [(1, 2, 10), (1, 3, 1), (3, 2, 1)], 1)},
+        {"desc": "disconnected pair", "input": (2, [], 1)},
+        {"desc": "star from source", "input": (4, [(1, 2, 2), (1, 3, 5), (1, 4, 1)], 1)},
+        {"desc": "zero-weight edge", "input": (2, [(1, 2, 0)], 1)},
+        {"desc": "cycle with equal-cost alternative", "input": (3, [(1, 2, 2), (2, 3, 2), (1, 3, 4)], 1)},
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Differential testing
 
@@ -433,6 +460,9 @@ def run_verification_for_paradigm(
     elif paradigm_id == "union_find":
         random_inputs = [generate_random_tree_plus_edge(random.randint(3, 8)) for _ in range(num_random)]
         adv = generate_adversarial_tree_plus_edge()
+    elif paradigm_id == "shortest_path":
+        random_inputs = [generate_random_weighted_digraph(random.randint(1, 6)) for _ in range(num_random)]
+        adv = generate_adversarial_weighted_digraphs()
     else:
         return run_verification(
             candidate, reference, random_n_range=(0, 8), num_random=num_random

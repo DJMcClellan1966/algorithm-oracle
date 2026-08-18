@@ -33,6 +33,7 @@ EXPLAINER_EXPECTATIONS = {
     "knapsack_01": ("subproblem_recurrence", "include or exclude"),
     "topo_sort": ("invariant_or_coloring", "in-degree"),
     "redundant_connection": ("component_invariant", "disjoint-set"),
+    "network_delay": ("cut_property_or_relaxation", "Dijkstra"),
 }
 
 

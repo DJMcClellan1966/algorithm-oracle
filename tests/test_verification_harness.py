@@ -23,11 +23,13 @@ from verification.harness import (
     generate_adversarial_koko,
     generate_adversarial_pairs,
     generate_adversarial_tree_plus_edge,
+    generate_adversarial_weighted_digraphs,
     generate_random_digraph,
     generate_random_intervals,
     generate_random_koko,
     generate_random_pairs,
     generate_random_tree_plus_edge,
+    generate_random_weighted_digraph,
     run_verification_for_paradigm,
     run_verification_from_source,
 )
@@ -139,6 +141,22 @@ def test_tree_plus_edge_generators_have_valid_shapes():
     assert {"minimal triangle", "chain closed into a loop", "star plus one shortcut edge"} <= descs
 
 
+def test_weighted_digraph_generators_have_valid_shapes():
+    random.seed(1)
+    for n in range(1, 7):
+        num_nodes, times, k = generate_random_weighted_digraph(n)
+        assert num_nodes == max(1, n)
+        assert 1 <= k <= num_nodes
+        for u, v, w in times:
+            assert 1 <= u <= num_nodes and 1 <= v <= num_nodes
+            assert u != v
+            assert w >= 1
+    adv = generate_adversarial_weighted_digraphs()
+    by_desc = {c["desc"]: c["input"] for c in adv}
+    assert by_desc["single node"] == (1, [], 1)
+    assert by_desc["unreachable node"] == (3, [(1, 2, 5)], 1)
+
+
 @pytest.mark.parametrize(
     "paradigm_id, adversarial_fn",
     [
@@ -147,6 +165,7 @@ def test_tree_plus_edge_generators_have_valid_shapes():
         ("binary_search", generate_adversarial_koko),
         ("two_pointers_sliding", generate_adversarial_pairs),
         ("union_find", generate_adversarial_tree_plus_edge),
+        ("shortest_path", generate_adversarial_weighted_digraphs),
     ],
 )
 def test_paradigm_runner_uses_named_generators(paradigm_id, adversarial_fn):
@@ -172,6 +191,7 @@ def test_paradigm_adversarial_counts_are_distinct():
         len(generate_adversarial_pairs()),
         len(generate_adversarial_arrays()),
         len(generate_adversarial_tree_plus_edge()),
+        len(generate_adversarial_weighted_digraphs()),
     ]
     assert len(set(counts)) == len(counts)
 
@@ -186,6 +206,7 @@ def test_paradigm_adversarial_counts_are_distinct():
         ("dp_optimal_substructure", generate_adversarial_arrays),
         ("divide_and_conquer", generate_adversarial_arrays),
         ("union_find", generate_adversarial_tree_plus_edge),
+        ("shortest_path", generate_adversarial_weighted_digraphs),
         ("not_a_real_paradigm", generate_adversarial_arrays),
     ],
 )

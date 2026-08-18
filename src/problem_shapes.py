@@ -19,6 +19,7 @@ from typing import Optional
 # checked before the more general cycle-detection shape).
 _SHAPES: list[tuple[str, tuple[str, ...]]] = [
     ("redundant_connection", ("redundant connection", "redundant edge", "union-find", "union find", "disjoint set")),
+    ("network_delay", ("network delay", "shortest path", "dijkstra", "bellman-ford", "single source", "single-source")),
     ("topo", ("topological", "topo sort", "topo-sort")),
     ("cycle", ("cycle", "directed graph", "detect cycle")),
     ("activity", ("activity", "activities", "interval", "intervals", "non-overlapping", "finish time")),
@@ -38,6 +39,7 @@ _COIN_CHANGE_CANONICAL_CUES = ("us ", "1, 5, 10, 25", "canonical")
 # Paradigm each shape belongs to -- used by the classifier's offline mock.
 SHAPE_PARADIGM = {
     "redundant_connection": "union_find",
+    "network_delay": "shortest_path",
     "topo": "graph_traversal",
     "cycle": "graph_traversal",
     "activity": "greedy_exchange",

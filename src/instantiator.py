@@ -663,7 +663,85 @@ function solve(edges):
     )
 
 
+def _template_network_delay() -> ConcreteAlgorithm:
+    reference = '''\
+def solve(data):
+    n, times, k = data
+    INF = float("inf")
+    dist = {i: INF for i in range(1, n + 1)}
+    dist[k] = 0
+    for _ in range(n - 1):
+        changed = False
+        for u, v, w in times:
+            if dist[u] != INF and dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+                changed = True
+        if not changed:
+            break
+    reachable = [dist[i] for i in range(1, n + 1) if dist[i] < INF]
+    if len(reachable) != n:
+        return -1
+    return max(reachable)
+'''
+    candidate = '''\
+def solve(data):
+    n, times, k = data
+    INF = float("inf")
+    adj = {i: [] for i in range(1, n + 1)}
+    for u, v, w in times:
+        adj[u].append((v, w))
+    dist = {i: INF for i in range(1, n + 1)}
+    dist[k] = 0
+    visited = set()
+    for _ in range(n):
+        u = None
+        best = INF
+        for node in range(1, n + 1):
+            if node not in visited and dist[node] < best:
+                best = dist[node]
+                u = node
+        if u is None:
+            break
+        visited.add(u)
+        for v, w in adj[u]:
+            if dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+    reachable = [dist[i] for i in range(1, n + 1) if dist[i] < INF]
+    if len(reachable) != n:
+        return -1
+    return max(reachable)
+'''
+    return ConcreteAlgorithm(
+        paradigm_id="shortest_path",
+        loop_invariant_or_key_insight=(
+            "Invariant: once a node is moved into the visited set, its tentative distance is "
+            "final and minimal -- because all edge weights are non-negative, no later relaxation "
+            "through an unvisited (therefore farther) node could ever produce a shorter path to it. "
+            "The answer is the max over all final distances, or -1 if any node stays unreachable."
+        ),
+        pseudocode="""\
+function solve(n, times, k):
+    dist[k] = 0, dist[other] = infinity
+    visited = {}
+    repeat n times:
+        u = unvisited node with smallest dist[u]
+        if none exists: break
+        mark u visited
+        for each edge (u, v, w):
+            dist[v] = min(dist[v], dist[u] + w)
+    if any dist[i] is still infinity: return -1
+    return max(dist[i] for all i)
+""",
+        time_complexity="O(V^2 + E) array-based Dijkstra (non-negative weights only)",
+        space_complexity="O(V + E)",
+        brute_force_reference=reference.strip(),
+        python_candidate=candidate.strip(),
+        notes="Dijkstra (network delay / shortest path) template.",
+    )
+
+
 TEMPLATES = {
+    "network_delay": _template_network_delay,
     "redundant_connection": _template_redundant_connection,
     "activity": _template_activity_selection,
     "lis": _template_lis,

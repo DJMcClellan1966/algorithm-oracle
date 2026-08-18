@@ -56,6 +56,12 @@ END_TO_END = [
         "union_find",
         "passed",
     ),
+    (
+        "Using Dijkstra, find the shortest path travel time from a starting "
+        "node to every other node in a directed weighted graph.",
+        "shortest_path",
+        "passed",
+    ),
 ]
 
 

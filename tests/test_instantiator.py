@@ -34,6 +34,7 @@ TEMPLATE_MARKERS = {
     "knapsack_01": "0/1 knapsack",
     "topo_sort": "topological sort",
     "redundant_connection": "Union-Find",
+    "network_delay": "Dijkstra",
 }
 
 

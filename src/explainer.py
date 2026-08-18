@@ -284,6 +284,26 @@ DFS three-coloring also works for cycle detection, but Union-Find cannot produce
     )
 
 
+def _explain_network_delay(profile, classification, algorithm, verification):
+    why = """Dijkstra maintains a set of nodes whose shortest distance from the source is already finalized, growing that set one node at a time.
+
+Invariant: every node in the visited set holds its true shortest distance. Initialization: only the source is visited, with distance 0 -- trivially correct. Inductive step: among unvisited nodes, the one with the smallest tentative distance is added next. Because all edge weights are non-negative, no path through a farther unvisited node could ever undercut that tentative distance, so it is already final. Relaxing its outgoing edges can only improve, never worsen, its neighbors' tentative distances.
+
+A negative edge weight would break the invariant -- a later, cheaper detour through an unvisited node could still exist, which is exactly why Bellman-Ford (used here as the reference) is required instead when weights can be negative."""
+    return Explanation(
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
+        textbook_why=why.strip() + "\n\n" + _verification_note(verification),
+        why_alternatives_fail=_contrastive_from_rejections(classification),
+        edge_cases_discussed=[
+            "Single node, no edges → distance 0, answer 0.",
+            "A node unreachable from the source → answer -1.",
+            "Self-loop → ignored; never improves the node's own distance.",
+            "Two paths of different cost to the same node → the cheaper one wins.",
+        ],
+    )
+
+
 def _explain_redundant_connection(profile, classification, algorithm, verification):
     why = """Maintain a Union-Find (disjoint-set) structure where each component tracks the nodes reachable using edges processed so far.
 
@@ -314,6 +334,7 @@ _SHAPE_EXPLAINERS = {
     "lcs": _explain_lcs,
     "knapsack": _explain_knapsack,
     "redundant_connection": _explain_redundant_connection,
+    "network_delay": _explain_network_delay,
 }
 
 
