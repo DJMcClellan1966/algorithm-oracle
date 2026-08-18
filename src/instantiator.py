@@ -520,11 +520,12 @@ def solve(graph):
                 indeg[v] = 0
                 nodes.append(v)
             indeg[v] += 1
-    from collections import deque
-    q = deque([u for u in indeg if indeg[u] == 0])
+    q = [u for u in indeg if indeg[u] == 0]
     order = []
-    while q:
-        u = q.popleft()
+    i = 0
+    while i < len(q):
+        u = q[i]
+        i += 1
         order.append(u)
         for v in graph.get(u, []):
             indeg[v] -= 1
@@ -542,9 +543,18 @@ def solve(graph):
     if n > 7:
         # fall back: use Kahn-like for large (should not happen in tests)
         return None
-    import itertools
-    pos = {nodes[i]: i for i in range(n)}
-    for perm in itertools.permutations(nodes):
+
+    def permutations(items):
+        if len(items) <= 1:
+            return [items]
+        result = []
+        for i in range(len(items)):
+            rest = items[:i] + items[i + 1:]
+            for p in permutations(rest):
+                result.append([items[i]] + p)
+        return result
+
+    for perm in permutations(nodes):
         rank = {perm[i]: i for i in range(n)}
         ok = True
         for u in graph:
@@ -555,7 +565,7 @@ def solve(graph):
             if not ok:
                 break
         if ok:
-            return list(perm)
+            return perm
     return None
 '''
     return ConcreteAlgorithm(

@@ -79,6 +79,19 @@ def test_known_template_emits_candidate_and_reference(example_id, marker):
     assert marker.lower() in (algo.notes or "").lower()
 
 
+@pytest.mark.parametrize("example_id", TEMPLATE_MARKERS.keys())
+def test_every_template_candidate_actually_verifies(example_id):
+    """Structural checks (has 'def solve', right notes marker) are not enough --
+    a candidate can look right and still crash the moment it's actually run
+    (e.g. topo_sort's old candidate/reference both used `import`, which the
+    sandbox's restricted builtins deliberately reject). Run every real
+    template through the real verification harness, not a stand-in."""
+    example = _by_id()[example_id]
+    algo = _instantiate_example(example)
+    report = verify(algo)
+    assert report.status == "passed", f"[{example_id}] {report.message}"
+
+
 def test_redundant_connection_candidate_verifies_against_reference():
     """The real union-find candidate must differentially pass against the
     brute-force reachability reference, not just have matching structure."""
