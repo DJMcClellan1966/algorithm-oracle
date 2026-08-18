@@ -9,7 +9,6 @@ Only intended to run after verification (or an explicit outside-verifiable-range
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Optional
 
@@ -421,8 +420,7 @@ def _llm_explain(
     verification: VerificationReport,
     model: str = "gpt-4o",
 ) -> Explanation:
-    import instructor
-    from openai import OpenAI
+    from src.llm_client import get_llm_client_and_model
 
     taxonomy = load_taxonomy()
     template = _argument_template_for(classification.primary_paradigm_id, taxonomy)
@@ -445,7 +443,7 @@ Produce an Explanation JSON object. paradigm_id must match the classification.
 argument_template_used should name the template you followed.
 """
 
-    client = instructor.from_openai(OpenAI())
+    client, model = get_llm_client_and_model(model)
     result = client.chat.completions.create(
         model=model,
         response_model=Explanation,
@@ -472,8 +470,9 @@ def explain(
     model: str = "gpt-4o",
     use_mock_if_no_key: bool = True,
 ) -> Explanation:
-    api_key = os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
-    if api_key:
+    from src.llm_client import has_llm_backend
+
+    if has_llm_backend():
         try:
             return _llm_explain(profile, classification, algorithm, verification, model=model)
         except Exception as e:

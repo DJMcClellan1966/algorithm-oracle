@@ -10,7 +10,6 @@ Falls back to a deterministic mock when no API key is present (useful for testin
 
 from __future__ import annotations
 
-import os
 import json
 from pathlib import Path
 from typing import Optional
@@ -285,16 +284,16 @@ def classify(
     if taxonomy is None:
         taxonomy = load_taxonomy()
 
-    api_key = os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
-    if not api_key and use_mock_if_no_key:
+    from src.llm_client import has_llm_backend
+
+    if not has_llm_backend() and use_mock_if_no_key:
         return _mock_classify(profile, taxonomy)
 
     # Real structured call via instructor
     try:
-        import instructor
-        from openai import OpenAI
+        from src.llm_client import get_llm_client_and_model
 
-        client = instructor.from_openai(OpenAI())
+        client, model = get_llm_client_and_model(model)
         system, user = build_classifier_prompt(profile, taxonomy)
 
         result = client.chat.completions.create(

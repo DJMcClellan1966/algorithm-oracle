@@ -15,7 +15,7 @@ ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
 from schemas.models import ClassificationResult
-from src.instantiator import instantiate
+from src.instantiator import _strip_code_fence, instantiate
 from src.pipeline import verify
 from src.profiler import profile_problem
 
@@ -103,6 +103,25 @@ def test_redundant_connection_candidate_verifies_against_reference():
     algo = _instantiate_example(example)
     report = verify(algo)
     assert report.status == "passed", report.message
+
+
+def test_strip_code_fence_removes_python_tagged_fence():
+    fenced = "```python\ndef solve(x):\n    return x\n```"
+    assert _strip_code_fence(fenced) == "def solve(x):\n    return x"
+
+
+def test_strip_code_fence_removes_bare_fence():
+    fenced = "```\ndef solve(x):\n    return x\n```"
+    assert _strip_code_fence(fenced) == "def solve(x):\n    return x"
+
+
+def test_strip_code_fence_leaves_unfenced_code_untouched():
+    bare = "def solve(x):\n    return x"
+    assert _strip_code_fence(bare) == bare
+
+
+def test_strip_code_fence_passes_through_none():
+    assert _strip_code_fence(None) is None
 
 
 def test_coin_change_does_not_reuse_activity_template():

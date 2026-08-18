@@ -62,7 +62,7 @@ PYTHONPATH=. python scripts/demo_classifier.py
 PYTHONPATH=. python scripts/demo_verification.py
 ```
 
-Set `OPENAI_API_KEY` to use the real LLM path instead of offline templates.
+Set `OPENAI_API_KEY` (or `ANTHROPIC_API_KEY`) to use the real LLM path instead of offline templates. To use a local Ollama model instead, set `OLLAMA_MODEL` (e.g. `qwen2.5-coder:14B`) — no API key needed. `OLLAMA_BASE_URL` defaults to `http://localhost:11434/v1`. If both are set, `OLLAMA_MODEL` takes priority.
 
 ## Status
 

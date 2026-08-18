@@ -14,7 +14,6 @@ so the pipeline stays fully testable offline.
 
 from __future__ import annotations
 
-import os
 import re
 from pathlib import Path
 from typing import Optional
@@ -1018,13 +1017,25 @@ def _match_template(profile: ProblemProfile, classification: ClassificationResul
 # LLM path
 # ---------------------------------------------------------------------------
 
+def _strip_code_fence(code: Optional[str]) -> Optional[str]:
+    """Some local models wrap code in ```python ... ``` even when explicitly
+    told not to (confirmed against a real Ollama call); compile_function
+    expects bare Python source, not markdown."""
+    if code is None:
+        return None
+    text = code.strip()
+    match = re.match(r"^```(?:python)?\s*\n(.*?)\n?```$", text, re.DOTALL)
+    if match:
+        return match.group(1)
+    return text
+
+
 def _llm_instantiate(
     profile: ProblemProfile,
     classification: ClassificationResult,
     model: str = "gpt-4o",
 ) -> ConcreteAlgorithm:
-    import instructor
-    from openai import OpenAI
+    from src.llm_client import get_llm_client_and_model
 
     system = (PROMPTS_DIR / "instantiator_system.txt").read_text(encoding="utf-8")
     # Strengthen the prompt so both executable sources are required
@@ -1036,6 +1047,7 @@ Additional hard requirements:
 - Both functions must accept the same input shape.
 - loop_invariant_or_key_insight must be stated before you write pseudocode.
 - Do not change the paradigm_id; copy it from the classification.
+- Do NOT wrap python_candidate or brute_force_reference in markdown code fences (no ```); return bare Python source only.
 """
 
     user = f"""Problem profile:
@@ -1047,7 +1059,7 @@ Classification (FIXED – do not change the paradigm):
 Produce a ConcreteAlgorithm JSON object.
 """
 
-    client = instructor.from_openai(OpenAI())
+    client, model = get_llm_client_and_model(model)
     result = client.chat.completions.create(
         model=model,
         response_model=ConcreteAlgorithm,
@@ -1059,6 +1071,8 @@ Produce a ConcreteAlgorithm JSON object.
     )
     # Ensure paradigm_id matches classification
     result.paradigm_id = classification.primary_paradigm_id
+    result.python_candidate = _strip_code_fence(result.python_candidate)
+    result.brute_force_reference = _strip_code_fence(result.brute_force_reference)
     return result
 
 
@@ -1076,8 +1090,9 @@ def instantiate(
     """
     Main entry point for Phase 3.
     """
-    api_key = os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
-    if api_key:
+    from src.llm_client import has_llm_backend
+
+    if has_llm_backend():
         try:
             return _llm_instantiate(profile, classification, model=model)
         except Exception as e:

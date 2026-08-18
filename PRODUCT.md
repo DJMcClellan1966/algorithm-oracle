@@ -38,7 +38,7 @@ Plausible-looking algorithms are not enough. Classification must be explicit, im
 - Pydantic schemas between stages
 - Streamlit UI (optional entry)
 - pytest for regression
-- Local-first; optional OPENAI_API_KEY for LLM stages (offline templates required)
+- Local-first; optional OPENAI_API_KEY/ANTHROPIC_API_KEY or a local OLLAMA_MODEL for LLM stages (offline templates required regardless)
 
 ## Success criteria (teeth, not vibes)
 - [x] `run_checks.sh` (or `run_checks.ps1`) exits 0 after pytest + LIS smoke

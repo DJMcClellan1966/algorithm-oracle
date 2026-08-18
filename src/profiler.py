@@ -8,7 +8,6 @@ before classification (clarification gate).
 
 from __future__ import annotations
 
-import os
 import re
 from pathlib import Path
 from typing import List, Optional
@@ -100,11 +99,10 @@ def _heuristic_profile(user_text: str) -> ProblemProfile:
 
 
 def _llm_profile(user_text: str, model: str = "gpt-4o") -> ProblemProfile:
-    import instructor
-    from openai import OpenAI
+    from src.llm_client import get_llm_client_and_model
 
     system = (PROMPTS_DIR / "profiler_system.txt").read_text(encoding="utf-8")
-    client = instructor.from_openai(OpenAI())
+    client, model = get_llm_client_and_model(model)
     return client.chat.completions.create(
         model=model,
         response_model=ProblemProfile,
@@ -135,8 +133,9 @@ def profile_problem(
             missing_constraints=["A non-empty problem description is required."],
         )
 
-    api_key = os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
-    if api_key:
+    from src.llm_client import has_llm_backend
+
+    if has_llm_backend():
         try:
             return _llm_profile(user_text, model=model)
         except Exception as e:
