@@ -22,11 +22,13 @@ from verification.harness import (
     generate_adversarial_intervals,
     generate_adversarial_koko,
     generate_adversarial_pairs,
+    generate_adversarial_flow_networks,
     generate_adversarial_queens_counts,
     generate_adversarial_stair_counts,
     generate_adversarial_tree_plus_edge,
     generate_adversarial_weighted_digraphs,
     generate_random_digraph,
+    generate_random_flow_network,
     generate_random_intervals,
     generate_random_koko,
     generate_random_pairs,
@@ -166,6 +168,22 @@ def test_queens_count_generators_have_valid_shapes():
     assert by_desc["n=2, provably no solution"] == 2
 
 
+def test_flow_network_generators_have_valid_shapes():
+    random.seed(1)
+    for n in range(1, 8):
+        num_nodes, edges, s, t = generate_random_flow_network(n)
+        assert num_nodes == max(2, n)
+        assert s == 1 and t == num_nodes
+        for u, v, cap in edges:
+            assert 1 <= u <= num_nodes and 1 <= v <= num_nodes
+            assert u != v
+            assert cap >= 1
+    adv = generate_adversarial_flow_networks()
+    by_desc = {c["desc"]: c["input"] for c in adv}
+    assert by_desc["no edges"] == (2, [], 1, 2)
+    assert by_desc["source equals sink"] == (1, [], 1, 1)
+
+
 def test_weighted_digraph_generators_have_valid_shapes():
     random.seed(1)
     for n in range(1, 7):
@@ -193,6 +211,7 @@ def test_weighted_digraph_generators_have_valid_shapes():
         ("shortest_path", generate_adversarial_weighted_digraphs),
         ("math_formula", generate_adversarial_stair_counts),
         ("backtracking", generate_adversarial_queens_counts),
+        ("network_flow", generate_adversarial_flow_networks),
     ],
 )
 def test_paradigm_runner_uses_named_generators(paradigm_id, adversarial_fn):
@@ -221,6 +240,7 @@ def test_paradigm_adversarial_counts_are_distinct():
         len(generate_adversarial_weighted_digraphs()),
         len(generate_adversarial_stair_counts()),
         len(generate_adversarial_queens_counts()),
+        len(generate_adversarial_flow_networks()),
     ]
     assert len(set(counts)) == len(counts)
 
@@ -238,6 +258,7 @@ def test_paradigm_adversarial_counts_are_distinct():
         ("shortest_path", generate_adversarial_weighted_digraphs),
         ("math_formula", generate_adversarial_stair_counts),
         ("backtracking", generate_adversarial_queens_counts),
+        ("network_flow", generate_adversarial_flow_networks),
         ("not_a_real_paradigm", generate_adversarial_arrays),
     ],
 )

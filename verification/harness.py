@@ -253,6 +253,33 @@ def generate_random_queens_count(max_n: int = 7) -> int:
     return random.randint(0, max_n)
 
 
+def generate_random_flow_network(n: int, edge_prob: float = 0.5, max_cap: int = 10) -> tuple:
+    """(n, edges, s, t): n nodes labeled 1..n, edges = list of (u, v, cap)
+    directed edges with positive integer capacities, s=1, t=n."""
+    n = max(2, n)
+    edges = []
+    for u in range(1, n + 1):
+        for v in range(1, n + 1):
+            if u != v and random.random() < edge_prob:
+                edges.append((u, v, random.randint(1, max_cap)))
+    return (n, edges, 1, n)
+
+
+def generate_adversarial_flow_networks() -> list[dict]:
+    return [
+        {"desc": "no edges", "input": (2, [], 1, 2)},
+        {"desc": "direct edge only", "input": (2, [(1, 2, 5)], 1, 2)},
+        {"desc": "single bottleneck", "input": (3, [(1, 2, 10), (2, 3, 2)], 1, 3)},
+        {"desc": "two parallel paths", "input": (4, [(1, 2, 3), (2, 4, 3), (1, 3, 2), (3, 4, 2)], 1, 4)},
+        {"desc": "parallel edges same pair", "input": (2, [(1, 2, 3), (1, 2, 4)], 1, 2)},
+        {"desc": "source equals sink", "input": (1, [], 1, 1)},
+        {"desc": "disconnected sink", "input": (3, [(1, 2, 5)], 1, 3)},
+        {"desc": "diamond shared bottleneck", "input": (4, [(1, 2, 10), (1, 3, 10), (2, 4, 4), (3, 4, 4)], 1, 4)},
+        {"desc": "self-loop ignored", "input": (2, [(1, 1, 5), (1, 2, 3)], 1, 2)},
+        {"desc": "chain", "input": (5, [(1, 2, 4), (2, 3, 4), (3, 4, 4), (4, 5, 4)], 1, 5)},
+    ]
+
+
 def generate_adversarial_queens_counts() -> list[dict]:
     return [
         {"desc": "n=2, provably no solution", "input": 2},
@@ -490,6 +517,9 @@ def run_verification_for_paradigm(
     elif paradigm_id == "backtracking":
         random_inputs = [generate_random_queens_count() for _ in range(num_random)]
         adv = generate_adversarial_queens_counts()
+    elif paradigm_id == "network_flow":
+        random_inputs = [generate_random_flow_network(random.randint(2, 6)) for _ in range(num_random)]
+        adv = generate_adversarial_flow_networks()
     else:
         return run_verification(
             candidate, reference, random_n_range=(0, 8), num_random=num_random

@@ -30,6 +30,7 @@ from src.problem_shapes import detect_shape, SHAPE_PARADIGM
         ("Find the shortest path using Dijkstra's algorithm.", "network_delay"),
         ("You are climbing stairs and can take 1 or 2 steps at a time.", "climbing_stairs"),
         ("Solve the classic n-queens puzzle and count the solutions.", "n_queens"),
+        ("Find the maximum flow from source to sink in this network.", "max_flow"),
     ],
 )
 def test_detect_shape_canonical_phrasings(text, expected_shape):

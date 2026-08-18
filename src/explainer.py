@@ -284,6 +284,26 @@ DFS three-coloring also works for cycle detection, but Union-Find cannot produce
     )
 
 
+def _explain_max_flow(profile, classification, algorithm, verification):
+    why = """The Ford-Fulkerson method repeatedly finds a path from source to sink along edges with remaining capacity, pushes as much flow as the tightest edge on that path allows, and then updates a *residual* graph: every unit of flow sent forward also opens up a unit of reverse capacity, so a later augmenting path can partially undo an earlier, suboptimal choice.
+
+Invariant: at every point, the current total flow is achievable, and it stops growing only when no augmenting path exists in the residual graph. By the max-flow min-cut theorem, that termination condition is exactly optimal: the set of nodes still reachable from the source in the residual graph, together with the rest, forms a cut whose capacity equals the flow already pushed -- so no cut, and therefore no flow, could ever be smaller or larger respectively.
+
+Reference and candidate both implement this same method and differ only in how they search for the next augmenting path: the reference uses depth-first search (simple, correct, but with no bound on how many augmentations it might take), while the candidate uses breadth-first search -- Edmonds-Karp -- which guarantees a polynomial number of augmentations. Both converge to the same maximum flow *value*, because that value is a property of the network, not of which augmenting path happened to be found first."""
+    return Explanation(
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
+        textbook_why=why.strip() + "\n\n" + _verification_note(verification),
+        why_alternatives_fail=_contrastive_from_rejections(classification),
+        edge_cases_discussed=[
+            "Source equals sink → 0 by convention (no augmenting is meaningful).",
+            "No path from source to sink → 0.",
+            "Parallel edges between the same pair → capacities add.",
+            "A self-loop → never traversed, since its endpoint is already visited.",
+        ],
+    )
+
+
 def _explain_n_queens(profile, classification, algorithm, verification):
     why = """Place queens one row at a time, tracking which columns and which of the two diagonal families are already occupied by a previously placed queen.
 
@@ -375,6 +395,7 @@ _SHAPE_EXPLAINERS = {
     "network_delay": _explain_network_delay,
     "climbing_stairs": _explain_climbing_stairs,
     "n_queens": _explain_n_queens,
+    "max_flow": _explain_max_flow,
 }
 
 

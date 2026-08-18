@@ -82,5 +82,11 @@
     "problem": "The n-queens puzzle asks you to place n queens on an n x n chessboard so that no two queens attack each other (same row, column, or diagonal). Return the number of distinct solutions for a given n.",
     "expected_paradigm_id": "backtracking",
     "notes": "Classic backtracking with pruning (LeetCode 'N-Queens II'); counting variant keeps the answer a single deterministic integer."
+  },
+  {
+    "id": "max_flow",
+    "problem": "You are given a flow network: n nodes, a list of directed edges with capacities, a source node, and a sink node. Return the maximum flow that can be sent from the source to the sink.",
+    "expected_paradigm_id": "network_flow",
+    "notes": "Classic max-flow problem, solved via Ford-Fulkerson / Edmonds-Karp; the maximum flow value is unique even though the specific flow assignment achieving it is not."
   }
 ]

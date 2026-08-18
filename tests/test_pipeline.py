@@ -74,6 +74,13 @@ END_TO_END = [
         "backtracking",
         "passed",
     ),
+    (
+        "You are given a flow network with directed capacitated edges, a "
+        "source node, and a sink node. Return the maximum flow from source "
+        "to sink.",
+        "network_flow",
+        "passed",
+    ),
 ]
 
 

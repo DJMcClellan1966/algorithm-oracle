@@ -37,6 +37,7 @@ TEMPLATE_MARKERS = {
     "network_delay": "Dijkstra",
     "climbing_stairs": "Climbing Stairs",
     "n_queens_count": "N-Queens",
+    "max_flow": "Edmonds-Karp",
 }
 
 

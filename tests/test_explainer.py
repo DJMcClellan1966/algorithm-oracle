@@ -36,6 +36,7 @@ EXPLAINER_EXPECTATIONS = {
     "network_delay": ("cut_property_or_relaxation", "Dijkstra"),
     "climbing_stairs": ("mathematical_derivation", "Binet"),
     "n_queens_count": ("search_tree_pruning", "dead end"),
+    "max_flow": ("maxflow_mincut", "residual"),
 }
 
 

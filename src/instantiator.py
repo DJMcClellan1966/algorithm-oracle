@@ -865,7 +865,132 @@ function solve(n):
     )
 
 
+def _template_max_flow() -> ConcreteAlgorithm:
+    reference = '''\
+def solve(data):
+    n, edges, s, t = data
+    if s == t:
+        return 0
+    capacity = {}
+    adj = {i: set() for i in range(1, n + 1)}
+    for u, v, cap in edges:
+        capacity[(u, v)] = capacity.get((u, v), 0) + cap
+        if (v, u) not in capacity:
+            capacity[(v, u)] = 0
+        adj[u].add(v)
+        adj[v].add(u)
+
+    def find_path_dfs():
+        visited = {s}
+        stack = [(s, [s])]
+        while stack:
+            node, path = stack.pop()
+            if node == t:
+                return path
+            for nxt in adj[node]:
+                if nxt not in visited and capacity.get((node, nxt), 0) > 0:
+                    visited.add(nxt)
+                    stack.append((nxt, path + [nxt]))
+        return None
+
+    total_flow = 0
+    while True:
+        path = find_path_dfs()
+        if path is None:
+            break
+        bottleneck = min(capacity[(path[i], path[i + 1])] for i in range(len(path) - 1))
+        for i in range(len(path) - 1):
+            u, v = path[i], path[i + 1]
+            capacity[(u, v)] -= bottleneck
+            capacity[(v, u)] += bottleneck
+        total_flow += bottleneck
+    return total_flow
+'''
+    candidate = '''\
+def solve(data):
+    n, edges, s, t = data
+    if s == t:
+        return 0
+    capacity = {}
+    adj = {i: set() for i in range(1, n + 1)}
+    for u, v, cap in edges:
+        capacity[(u, v)] = capacity.get((u, v), 0) + cap
+        if (v, u) not in capacity:
+            capacity[(v, u)] = 0
+        adj[u].add(v)
+        adj[v].add(u)
+
+    def find_path_bfs():
+        visited = {s: None}
+        queue = [s]
+        i = 0
+        while i < len(queue):
+            node = queue[i]
+            i += 1
+            if node == t:
+                path = []
+                cur = t
+                while cur is not None:
+                    path.append(cur)
+                    cur = visited[cur]
+                path.reverse()
+                return path
+            for nxt in adj[node]:
+                if nxt not in visited and capacity.get((node, nxt), 0) > 0:
+                    visited[nxt] = node
+                    queue.append(nxt)
+        return None
+
+    total_flow = 0
+    while True:
+        path = find_path_bfs()
+        if path is None:
+            break
+        bottleneck = min(capacity[(path[i], path[i + 1])] for i in range(len(path) - 1))
+        for i in range(len(path) - 1):
+            u, v = path[i], path[i + 1]
+            capacity[(u, v)] -= bottleneck
+            capacity[(v, u)] += bottleneck
+        total_flow += bottleneck
+    return total_flow
+'''
+    return ConcreteAlgorithm(
+        paradigm_id="network_flow",
+        loop_invariant_or_key_insight=(
+            "Invariant: at every point, total_flow equals the net flow actually pushed from s "
+            "so far, and it can only increase by finding a path from s to t in the *residual* "
+            "graph (remaining forward capacity plus any capacity freed by reversing previously "
+            "sent flow). By the max-flow min-cut theorem, the process is optimal exactly when no "
+            "augmenting path remains -- at that point the reachable set from s in the residual "
+            "graph forms a cut whose capacity equals the flow pushed. Reference and candidate "
+            "differ only in how they search for the next augmenting path (DFS vs. BFS); the "
+            "max-flow *value* they converge to is the same either way."
+        ),
+        pseudocode="""\
+function solve(n, edges, s, t):
+    if s == t: return 0
+    build residual capacity[(u,v)] from edges, with capacity[(v,u)] = 0 if absent
+    total_flow = 0
+    loop:
+        path = find any s-to-t path using only edges with capacity[(u,v)] > 0
+        if no path: break
+        bottleneck = min capacity along path
+        for each edge (u,v) on path:
+            capacity[(u,v)] -= bottleneck   # use it up
+            capacity[(v,u)] += bottleneck   # ...but allow undoing it later
+        total_flow += bottleneck
+    return total_flow
+""",
+        time_complexity="Edmonds-Karp (BFS augmenting path): O(V E^2); reference (DFS) has no polynomial bound in general but terminates for integer capacities",
+        space_complexity="O(V + E)",
+        brute_force_reference=reference.strip(),
+        python_candidate=candidate.strip(),
+        notes="Max-flow value via Ford-Fulkerson / Edmonds-Karp (network_flow) template.",
+    )
+
+
 TEMPLATES = {
+    "max_flow": _template_max_flow,
     "n_queens": _template_n_queens,
     "climbing_stairs": _template_climbing_stairs,
     "network_delay": _template_network_delay,

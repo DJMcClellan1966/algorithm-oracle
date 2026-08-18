@@ -74,6 +74,16 @@ _SHAPE_DETAILS: dict[str, dict] = {
             "online or offline": "Online – edges are processed one at a time in the given order.",
         },
     },
+    "max_flow": {
+        "rejected": [
+            RejectedParadigm(paradigm_id="graph_traversal", reason="Reachability alone isn't enough; capacities must be tracked and repeatedly saturated via augmenting paths."),
+            RejectedParadigm(paradigm_id="dp_optimal_substructure", reason="There's no acyclic subproblem decomposition; the residual graph changes after every augmenting path."),
+        ],
+        "answers": {
+            "modeled as a flow network with capacities": "Yes – directed edges with capacities, a designated source and sink.",
+            "natural source and sink": "Yes – a single source and a single sink are given.",
+        },
+    },
     "n_queens": {
         "rejected": [
             RejectedParadigm(paradigm_id="dp_optimal_substructure", reason="Placements don't decompose into independent overlapping subproblems; the constraint is global across rows, columns, and diagonals."),
