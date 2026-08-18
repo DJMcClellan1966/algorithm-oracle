@@ -31,6 +31,32 @@ EXAMPLES = {
         "Koko can eat bananas at speed k. Given piles and hours h, find the minimum "
         "integer k such that she can finish all piles in at most h hours."
     ),
+    "Redundant connection (Union-Find)": (
+        "You are given a list of edges added one at a time to build a graph on n nodes "
+        "that started as a tree; exactly one extra edge was added, creating a single "
+        "cycle. Using Union-Find, identify the redundant edge that can be removed to "
+        "restore a tree."
+    ),
+    "Network delay time (Dijkstra)": (
+        "You are given n network nodes, a list of directed weighted edges (u, v, w) "
+        "representing travel times, and a starting node k. Using the shortest path "
+        "from k, return the minimum time for a signal sent from node k to reach every "
+        "node, or -1 if some node is unreachable."
+    ),
+    "Climbing stairs": (
+        "You are climbing a staircase with n steps. Each time you can climb either 1 "
+        "or 2 steps. Return the number of distinct ways to climb to the top."
+    ),
+    "N-Queens count": (
+        "The n-queens puzzle asks you to place n queens on an n x n chessboard so that "
+        "no two queens attack each other (same row, column, or diagonal). Return the "
+        "number of distinct solutions for a given n."
+    ),
+    "Maximum flow": (
+        "You are given a flow network: n nodes, a list of directed edges with "
+        "capacities, a source node, and a sink node. Return the maximum flow that can "
+        "be sent from the source to the sink."
+    ),
 }
 
 DEFAULT_SHOW_PYTHON = False

@@ -67,6 +67,16 @@ def test_examples_cover_dp_greedy_graph_and_gate():
     assert "graph" in EXAMPLES["Underspecified graph (triggers gate)"].lower()
 
 
+def test_examples_cover_all_five_added_paradigms():
+    """The dropdown must not silently lag behind the paradigms the pipeline
+    actually supports -- these five were added after the original six."""
+    assert "Redundant connection (Union-Find)" in EXAMPLES
+    assert "Network delay time (Dijkstra)" in EXAMPLES
+    assert "Climbing stairs" in EXAMPLES
+    assert "N-Queens count" in EXAMPLES
+    assert "Maximum flow" in EXAMPLES
+
+
 def test_streamlit_app_uses_view_helpers():
     """The running app must call the tested helpers, not a parallel copy."""
     src = (ROOT / "app" / "streamlit_app.py").read_text(encoding="utf-8")
