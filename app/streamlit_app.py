@@ -22,6 +22,7 @@ from app.ui import (
     DEFAULT_SHOW_PYTHON,
     EXAMPLES,
     can_toggle_python,
+    source_path_label,
     toggle_label,
     visible_code,
 )
@@ -95,9 +96,9 @@ result = st.session_state.oracle_result
 # Output
 # ---------------------------------------------------------------------------
 if result is not None:
-    profile = result["profile"]
+    profile = result.profile
 
-    with st.expander("Problem profile", expanded=bool(result.get("needs_clarification"))):
+    with st.expander("Problem profile", expanded=result.needs_clarification):
         st.markdown(f"**Summary:** {profile.summary}")
         st.markdown(f"**Input type:** `{profile.input_type}`")
         if profile.size_regime:
@@ -111,7 +112,8 @@ if result is not None:
         if profile.ambiguities:
             st.markdown("**Ambiguities:** " + "; ".join(profile.ambiguities))
 
-    if result.get("needs_clarification"):
+    if result.needs_clarification:
+        st.caption(source_path_label(result.source_path))
         st.warning("The problem statement is missing details that affect the algorithm choice.")
         st.markdown("**Please clarify:**")
         for item in profile.missing_constraints:
@@ -129,12 +131,13 @@ if result is not None:
                 except Exception as e:
                     st.error(f"Pipeline error: {type(e).__name__}: {e}")
 
-    elif result.get("classification") is not None:
-        classification = result["classification"]
-        algorithm = result["algorithm"]
-        verification = result["verification"]
-        explanation = result["explanation"]
+    elif result.classification is not None:
+        classification = result.classification
+        algorithm = result.algorithm
+        verification = result.verification
+        explanation = result.explanation
 
+        st.caption(source_path_label(result.source_path))
         st.subheader("1. Classification")
         c1, c2 = st.columns([2, 1])
         with c1:

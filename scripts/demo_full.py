@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
+from src.offline_env import isolate_from_llm_env
 from src.pipeline import run_oracle
 
 PROBLEMS = [
@@ -20,11 +21,12 @@ PROBLEMS = [
 
 
 def main():
+    isolate_from_llm_env()
     for i, text in enumerate(PROBLEMS, 1):
         print("=" * 72)
         print(f"[{i}] {text[:90]}{'...' if len(text) > 90 else ''}")
         r = run_oracle(text)
-        c, a, v, e = r["classification"], r["algorithm"], r["verification"], r["explanation"]
+        c, a, v, e = r.classification, r.algorithm, r.verification, r.explanation
 
         print(f"\n  CLASSIFICATION: {c.primary_paradigm_id} ({c.confidence})")
         for rej in c.rejected[:2]:

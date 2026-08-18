@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from src.offline_env import isolate_from_llm_env
 from src.pipeline import run_oracle
 
 PROBLEM = (
@@ -19,15 +20,17 @@ PROBLEM = (
 
 
 def main() -> None:
+    isolate_from_llm_env()
     result = run_oracle(PROBLEM)
-    assert result.get("needs_clarification") is False
-    assert result.get("classification") is not None
-    assert result["classification"].primary_paradigm_id == "dp_optimal_substructure"
-    assert result["verification"].status == "passed", result["verification"].message
+    assert result.needs_clarification is False
+    assert result.classification is not None
+    assert result.classification.primary_paradigm_id == "dp_optimal_substructure"
+    assert result.verification is not None
+    assert result.verification.status == "passed", result.verification.message
     print(
         "pipeline smoke ok:",
-        result["classification"].primary_paradigm_id,
-        result["verification"].status,
+        result.classification.primary_paradigm_id,
+        result.verification.status,
     )
 
 

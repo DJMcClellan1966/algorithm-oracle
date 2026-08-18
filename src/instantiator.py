@@ -1089,6 +1089,7 @@ def _match_template(profile: ProblemProfile, classification: ClassificationResul
         return None
     algo = factory()
     algo.shape = shape
+    algo.source = "template"
     return algo
 
 
@@ -1105,6 +1106,7 @@ def _unmatched_stub(
         python_candidate=None,
         notes="Fallback stub. Provide OPENAI_API_KEY or add a template.",
         shape=shape,
+        source="stub",
     )
 
 
@@ -1166,6 +1168,7 @@ Produce a ConcreteAlgorithm JSON object.
     # Ensure paradigm_id matches classification
     result.paradigm_id = classification.primary_paradigm_id
     result.shape = detect_shape(_shape_text(profile, classification))
+    result.source = "llm"
     result.python_candidate = _strip_code_fence(result.python_candidate)
     result.brute_force_reference = _strip_code_fence(result.brute_force_reference)
     return result

@@ -21,6 +21,7 @@ def test_readme_quickstart_and_status_are_current():
     text = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "pip install -r requirements.txt" in text
     assert "streamlit run app/streamlit_app.py" in text
+    assert "python -m src" in text
     assert "run_checks.sh" in text
     assert "run_checks.ps1" in text
     assert "outside_verifiable_range" in text

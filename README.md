@@ -43,6 +43,7 @@ From this repository root (not `artifacts/algorithm-oracle`):
 ```bash
 pip install -r requirements.txt
 PYTHONPATH=. python -m pytest tests/ -v
+PYTHONPATH=. python -m src "Given an array of integers, return the length of the longest strictly increasing subsequence."
 PYTHONPATH=. streamlit run app/streamlit_app.py
 ```
 

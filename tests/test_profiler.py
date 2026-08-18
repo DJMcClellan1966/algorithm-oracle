@@ -42,12 +42,13 @@ def test_underspecified_graph_profile_flags_missing_constraints():
 
 def test_underspecified_graph_gates_run_oracle():
     result = run_oracle(UNDER_SPECIFIED_GRAPH)
-    assert result["needs_clarification"] is True
-    assert result["classification"] is None
-    assert result["algorithm"] is None
-    assert result["verification"] is None
-    assert result["explanation"] is None
-    assert result["profile"].missing_constraints
+    assert result.needs_clarification is True
+    assert result.classification is None
+    assert result.algorithm is None
+    assert result.verification is None
+    assert result.explanation is None
+    assert result.profile.missing_constraints
+    assert result.source_path == "gated"
 
 
 def test_specified_directed_cycle_does_not_gate():
@@ -56,8 +57,8 @@ def test_specified_directed_cycle_does_not_gate():
     assert "directed" in profile.special_structure
     assert needs_clarification(profile) is False
     result = run_oracle(SPECIFIED_CYCLE)
-    assert result["needs_clarification"] is False
-    assert result["classification"] is not None
+    assert result.needs_clarification is False
+    assert result.classification is not None
 
 
 def test_specified_array_problem_does_not_gate():
@@ -71,8 +72,8 @@ def test_empty_problem_requires_clarification():
     assert needs_clarification(profile)
     assert profile.missing_constraints
     result = run_oracle("")
-    assert result["needs_clarification"] is True
-    assert result["classification"] is None
+    assert result.needs_clarification is True
+    assert result.classification is None
 
 
 def test_known_shape_does_not_call_llm_profiler(monkeypatch):

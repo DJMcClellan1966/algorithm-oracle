@@ -14,6 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
+from src.offline_env import isolate_from_llm_env
 from verification.harness import (
     run_verification_from_source,
     _LIS_CANDIDATE,
@@ -23,6 +24,7 @@ from verification.harness import (
 
 
 def main():
+    isolate_from_llm_env()
     print("=" * 60)
     print("1. Correct O(n²) LIS vs exponential brute-force reference")
     print("=" * 60)

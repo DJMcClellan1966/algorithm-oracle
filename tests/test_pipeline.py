@@ -16,18 +16,20 @@ from schemas.models import (
     ClassificationResult,
     ConcreteAlgorithm,
     Explanation,
+    OracleResponse,
     ProblemProfile,
     VerificationReport,
 )
 from src.pipeline import run_oracle
 
-FULL_KEYS = {
+RESPONSE_FIELDS = {
     "profile",
     "needs_clarification",
     "classification",
     "algorithm",
     "verification",
     "explanation",
+    "source_path",
 }
 
 UNDER_SPECIFIED_GRAPH = "Find the shortest path between two nodes in a graph."
@@ -97,44 +99,49 @@ def offline_pipeline(monkeypatch):
     monkeypatch.delenv("OLLAMA_MODEL", raising=False)
 
 
-def _assert_full_dict(result: dict, *, gated: bool) -> None:
-    assert set(result) == FULL_KEYS
-    assert isinstance(result["profile"], ProblemProfile)
+def _assert_response(result: OracleResponse, *, gated: bool) -> None:
+    assert isinstance(result, OracleResponse)
+    assert set(type(result).model_fields) == RESPONSE_FIELDS
+    assert isinstance(result.profile, ProblemProfile)
     if gated:
-        assert result["needs_clarification"] is True
-        assert result["classification"] is None
-        assert result["algorithm"] is None
-        assert result["verification"] is None
-        assert result["explanation"] is None
+        assert result.needs_clarification is True
+        assert result.classification is None
+        assert result.algorithm is None
+        assert result.verification is None
+        assert result.explanation is None
+        assert result.source_path == "gated"
         return
-    assert result["needs_clarification"] is False
-    assert isinstance(result["classification"], ClassificationResult)
-    assert isinstance(result["algorithm"], ConcreteAlgorithm)
-    assert isinstance(result["verification"], VerificationReport)
-    assert isinstance(result["explanation"], Explanation)
+    assert result.needs_clarification is False
+    assert isinstance(result.classification, ClassificationResult)
+    assert isinstance(result.algorithm, ConcreteAlgorithm)
+    assert isinstance(result.verification, VerificationReport)
+    assert isinstance(result.explanation, Explanation)
+    assert result.source_path in {"template", "llm", "stub"}
 
 
 @pytest.mark.parametrize("problem, paradigm_id, verify_status", END_TO_END)
 def test_run_oracle_full_dict_end_to_end(problem, paradigm_id, verify_status):
     result = run_oracle(problem)
-    _assert_full_dict(result, gated=False)
-    assert result["classification"].primary_paradigm_id == paradigm_id
-    assert result["algorithm"].python_candidate and "def solve" in result["algorithm"].python_candidate
-    assert result["algorithm"].brute_force_reference and "def solve" in result["algorithm"].brute_force_reference
-    assert result["verification"].status == verify_status
-    assert result["explanation"].argument_template_used
-    assert result["explanation"].why_alternatives_fail
+    _assert_response(result, gated=False)
+    assert result.classification.primary_paradigm_id == paradigm_id
+    assert result.algorithm.python_candidate and "def solve" in result.algorithm.python_candidate
+    assert result.algorithm.brute_force_reference and "def solve" in result.algorithm.brute_force_reference
+    assert result.verification.status == verify_status
+    assert result.explanation.argument_template_used
+    assert result.explanation.why_alternatives_fail
+    assert result.source_path == "template"
+    assert result.algorithm.source == "template"
 
 
 def test_force_true_bypasses_clarification_gate():
     gated = run_oracle(UNDER_SPECIFIED_GRAPH, force=False)
-    _assert_full_dict(gated, gated=True)
+    _assert_response(gated, gated=True)
 
     forced = run_oracle(UNDER_SPECIFIED_GRAPH, force=True)
-    _assert_full_dict(forced, gated=False)
-    assert forced["profile"].missing_constraints
-    assert forced["classification"] is not None
-    assert forced["verification"].status in {
+    _assert_response(forced, gated=False)
+    assert forced.profile.missing_constraints
+    assert forced.classification is not None
+    assert forced.verification.status in {
         "passed",
         "failed",
         "outside_verifiable_range",
@@ -144,18 +151,19 @@ def test_force_true_bypasses_clarification_gate():
 
 def test_unmatched_problem_does_not_claim_passed():
     result = run_oracle("Compute an optimal value using dynamic programming.")
-    _assert_full_dict(result, gated=False)
-    assert result["algorithm"].python_candidate is None
-    assert result["verification"].status == "outside_verifiable_range"
+    _assert_response(result, gated=False)
+    assert result.algorithm.python_candidate is None
+    assert result.verification.status == "outside_verifiable_range"
+    assert result.source_path == "stub"
 
 
 def test_generic_list_sum_does_not_claim_verified_lis():
     """'list' must not be classified as LIS and then false-pass verification."""
     result = run_oracle("Given a list of numbers, compute their sum.")
-    _assert_full_dict(result, gated=False)
-    notes = (result["algorithm"].notes or "")
-    insight = result["algorithm"].loop_invariant_or_key_insight or ""
+    _assert_response(result, gated=False)
+    notes = (result.algorithm.notes or "")
+    insight = result.algorithm.loop_invariant_or_key_insight or ""
     assert "LIS" not in notes
     assert "longest increasing" not in insight.lower()
-    assert result["algorithm"].python_candidate is None
-    assert result["verification"].status == "outside_verifiable_range"
+    assert result.algorithm.python_candidate is None
+    assert result.verification.status == "outside_verifiable_range"

@@ -15,6 +15,7 @@ from app.ui import (
     DEFAULT_SHOW_PYTHON,
     EXAMPLES,
     can_toggle_python,
+    source_path_label,
     toggle_label,
     visible_code,
 )
@@ -76,6 +77,17 @@ def test_examples_cover_all_five_added_paradigms():
     assert "Climbing stairs" in EXAMPLES
     assert "N-Queens count" in EXAMPLES
     assert "Maximum flow" in EXAMPLES
+    assert "Two-sum (sort + two pointers)" in EXAMPLES
+    assert "Longest common subsequence" in EXAMPLES
+    assert "0/1 knapsack" in EXAMPLES
+    assert "Topological sort" in EXAMPLES
+
+
+def test_source_path_label_covers_all_response_paths():
+    assert source_path_label("template") == "Offline template"
+    assert source_path_label("llm") == "LLM-generated"
+    assert source_path_label("stub") == "Unmatched stub"
+    assert source_path_label("gated") == "Awaiting clarification"
 
 
 def test_streamlit_app_uses_view_helpers():
@@ -92,7 +104,9 @@ def test_streamlit_app_uses_view_helpers():
         "can_toggle_python",
         "toggle_label",
         "visible_code",
+        "source_path_label",
     } <= imported
     assert "visible_code(" in src
     assert "toggle_label(" in src
     assert "can_toggle_python(" in src
+    assert "source_path_label(" in src

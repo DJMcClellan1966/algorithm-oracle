@@ -16,9 +16,11 @@ ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
 from src.classifier import classify_from_text, load_taxonomy
+from src.offline_env import isolate_from_llm_env
 
 
 def main():
+    isolate_from_llm_env()
     if len(sys.argv) > 1:
         problems = [" ".join(sys.argv[1:])]
     else:

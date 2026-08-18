@@ -106,11 +106,12 @@ def _explanation() -> schema_models.Explanation:
 def _oracle_response() -> schema_models.OracleResponse:
     return schema_models.OracleResponse(
         profile=_profile(),
+        needs_clarification=False,
         classification=_classification(),
         algorithm=_algorithm(),
         verification=_verification(),
         explanation=_explanation(),
-        python_implementation="def solve(A): return 0",
+        source_path="template",
     )
 
 

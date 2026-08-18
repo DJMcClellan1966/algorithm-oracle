@@ -128,7 +128,7 @@ def explain(
 # Full pipeline
 # ---------------------------------------------------------------------------
 
-def run_oracle(user_text: str, *, force: bool = False) -> dict:
+def run_oracle(user_text: str, *, force: bool = False) -> OracleResponse:
     """
     Runs Profile → Classify → Instantiate → Verify → Explain.
 
@@ -140,25 +140,23 @@ def run_oracle(user_text: str, *, force: bool = False) -> dict:
     profile = profile_problem(user_text)
 
     if needs_clarification(profile) and not force:
-        return {
-            "profile": profile,
-            "needs_clarification": True,
-            "classification": None,
-            "algorithm": None,
-            "verification": None,
-            "explanation": None,
-        }
+        return OracleResponse(
+            profile=profile,
+            needs_clarification=True,
+            source_path="gated",
+        )
 
     classification = classify(profile, taxonomy)
     algorithm = instantiate(profile, classification)
     verification = verify(algorithm)
     explanation = explain(profile, classification, algorithm, verification)
 
-    return {
-        "profile": profile,
-        "needs_clarification": False,
-        "classification": classification,
-        "algorithm": algorithm,
-        "verification": verification,
-        "explanation": explanation,
-    }
+    return OracleResponse(
+        profile=profile,
+        needs_clarification=False,
+        classification=classification,
+        algorithm=algorithm,
+        verification=verification,
+        explanation=explanation,
+        source_path=algorithm.source or "stub",
+    )

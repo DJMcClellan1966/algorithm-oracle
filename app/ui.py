@@ -35,6 +35,21 @@ EXAMPLES = {
         "Koko can eat bananas at speed k. Given piles and hours h, find the minimum "
         "integer k such that she can finish all piles in at most h hours."
     ),
+    "Two-sum (sort + two pointers)": (
+        "Given an array of integers and a target, determine whether any two elements "
+        "sum to the target. You may sort the array and use two pointers."
+    ),
+    "Longest common subsequence": (
+        "Given two sequences, compute the length of their longest common subsequence."
+    ),
+    "0/1 knapsack": (
+        "0/1 knapsack: given item weights and values and capacity W, maximize total "
+        "value without exceeding capacity. Each item at most once."
+    ),
+    "Topological sort": (
+        "Given a directed graph, return a topological ordering of its nodes, "
+        "or report that a cycle exists."
+    ),
     "Redundant connection (Union-Find)": (
         "You are given a list of edges added one at a time to build a graph on n nodes "
         "that started as a tree; exactly one extra edge was added, creating a single "
@@ -84,3 +99,15 @@ def toggle_label(show_python: bool) -> str:
 
 def can_toggle_python(python_candidate: Optional[str]) -> bool:
     return bool(python_candidate and "def solve" in python_candidate)
+
+
+_SOURCE_LABELS = {
+    "template": "Offline template",
+    "llm": "LLM-generated",
+    "stub": "Unmatched stub",
+    "gated": "Awaiting clarification",
+}
+
+
+def source_path_label(source_path: str) -> str:
+    return _SOURCE_LABELS.get(source_path, source_path)

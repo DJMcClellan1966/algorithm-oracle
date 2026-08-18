@@ -156,6 +156,7 @@ def test_known_template_records_shape(example_id):
     algo = _instantiate_example(example)
     assert algo.shape == detect_shape(example["problem"])
     assert algo.shape is not None
+    assert algo.source == "template"
 
 
 def test_verify_uses_persisted_shape_when_notes_have_no_keywords():

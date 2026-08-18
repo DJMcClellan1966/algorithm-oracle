@@ -74,6 +74,10 @@ class ConcreteAlgorithm(BaseModel):
         None,
         description="Canonical problem-shape id from src.problem_shapes; used to pick verifiers",
     )
+    source: Optional[Literal["template", "llm", "stub"]] = Field(
+        None,
+        description="How this algorithm was produced: offline template, LLM, or unmatched stub",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -121,9 +125,9 @@ class Explanation(BaseModel):
 
 class OracleResponse(BaseModel):
     profile: ProblemProfile
-    classification: ClassificationResult
-    algorithm: ConcreteAlgorithm
-    verification: VerificationReport
-    explanation: Explanation
-    # Real code is generated on demand / as a separate mechanical step
-    python_implementation: Optional[str] = None
+    needs_clarification: bool = False
+    classification: Optional[ClassificationResult] = None
+    algorithm: Optional[ConcreteAlgorithm] = None
+    verification: Optional[VerificationReport] = None
+    explanation: Optional[Explanation] = None
+    source_path: Literal["template", "llm", "stub", "gated"] = "gated"

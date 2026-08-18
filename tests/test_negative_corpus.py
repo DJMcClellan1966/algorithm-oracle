@@ -51,9 +51,9 @@ def test_negative_shape_constraints(case):
 )
 def test_negative_pipeline_does_not_claim_passed(case):
     result = run_oracle(case["problem"])
-    if result.get("needs_clarification"):
+    if result.needs_clarification:
         return
-    assert result["verification"] is not None
-    assert result["verification"].status != "passed", (
+    assert result.verification is not None
+    assert result.verification.status != "passed", (
         f"[{case['id']}] verification claimed passed for a negative example"
     )

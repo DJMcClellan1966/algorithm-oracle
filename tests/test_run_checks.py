@@ -34,6 +34,7 @@ def test_run_checks_ps1_contains_required_steps():
 def test_gatekeeper_smoke_requires_lis_passed():
     env = os.environ.copy()
     env["PYTHONPATH"] = str(ROOT)
+    env["OPENAI_API_KEY"] = "sk-must-not-be-used"
     completed = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "gatekeeper_smoke.py")],
         cwd=ROOT,
