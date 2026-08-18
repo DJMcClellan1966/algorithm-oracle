@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Optional
 
 from schemas.models import ProblemProfile, ClassificationResult, ConcreteAlgorithm
+from src.problem_shapes import detect_shape
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -587,26 +588,10 @@ TEMPLATES = {
 
 
 def _match_template(profile: ProblemProfile, classification: ClassificationResult) -> Optional[ConcreteAlgorithm]:
-    text = (profile.summary + " " + classification.primary_paradigm_id).lower()
-    if any(w in text for w in ["activity", "activities", "interval", "intervals", "non-overlapping", "finish time"]):
-        return TEMPLATES["activity"]()
-    if any(w in text for w in ["longest increasing", "lis", "increasing subsequence"]):
-        return TEMPLATES["lis"]()
-    if any(w in text for w in ["longest common subsequence", "lcs"]):
-        return TEMPLATES["lcs"]()
-    if any(w in text for w in ["knapsack", "0/1", "capacity w"]):
-        return TEMPLATES["knapsack"]()
-    if any(w in text for w in ["topological", "topo sort", "topo-sort"]):
-        return TEMPLATES["topo"]()
-    if any(w in text for w in ["two sum", "two-sum", "pair sum", "two pointers", "two elements sum", "sum to the target"]):
-        return TEMPLATES["two_sum"]()
-    if any(w in text for w in ["cycle", "directed graph"]) and "topo" not in text:
-        return TEMPLATES["cycle"]()
-    if any(w in text for w in ["koko", "eating bananas", "speed k", "capacity to ship"]):
-        return TEMPLATES["koko"]()
-    if any(w in text for w in ["merge sort", "mergesort", "divide-and-conquer", "divide and conquer"]):
-        return TEMPLATES["mergesort"]()
-    return None
+    text = profile.summary + " " + classification.primary_paradigm_id
+    shape = detect_shape(text)
+    factory = TEMPLATES.get(shape)
+    return factory() if factory else None
 
 
 # ---------------------------------------------------------------------------

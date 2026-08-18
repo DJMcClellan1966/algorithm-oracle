@@ -19,6 +19,7 @@ import yaml
 from pydantic import ValidationError
 
 from schemas.models import ProblemProfile, ClassificationResult, RejectedParadigm
+from src.problem_shapes import detect_shape, SHAPE_PARADIGM
 
 TAXONOMY_PATH = Path(__file__).parent.parent / "taxonomy" / "paradigms.yaml"
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
@@ -62,49 +63,39 @@ Produce a ClassificationResult.
     return system, user
 
 
-def _mock_classify(profile: ProblemProfile, taxonomy: dict) -> ClassificationResult:
-    """
-    Deterministic fallback used when no API key is available.
-    Simple keyword heuristics so the rest of the pipeline can be exercised.
-    """
-    text = (profile.summary + " " + profile.input_type).lower()
-
-    # Very rough keyword mapping – only for offline scaffolding
-    if any(w in text for w in ["interval", "activity", "non-overlapping", "finish time"]):
-        primary = "greedy_exchange"
-        rejected = [
+_SHAPE_DETAILS: dict[str, dict] = {
+    "activity": {
+        "rejected": [
             RejectedParadigm(paradigm_id="dp_optimal_substructure", reason="No overlapping subproblems; greedy choice property holds via exchange argument."),
             RejectedParadigm(paradigm_id="graph_traversal", reason="The input is a set of intervals, not an explicit graph."),
-        ]
-        answers = {
+        ],
+        "answers": {
             "greedy choice property": "Yes – earliest finish time can always be part of an optimal solution.",
             "exchange argument": "Yes – any optimal solution that starts later can swap in the earliest-finishing activity.",
-        }
-    elif any(w in text for w in ["longest increasing", "lis", "increasing subsequence"]):
-        primary = "dp_optimal_substructure"
-        rejected = [
+        },
+    },
+    "lis": {
+        "rejected": [
             RejectedParadigm(paradigm_id="greedy_exchange", reason="Greedy (e.g. always take next larger) fails; classic counter-examples exist."),
             RejectedParadigm(paradigm_id="divide_and_conquer", reason="Subproblems overlap heavily; memoization/DP is required."),
-        ]
-        answers = {
+        ],
+        "answers": {
             "overlapping subproblems": "Yes – many prefixes share the same best ending values.",
             "optimal substructure": "Yes – LIS ending at i is built from earlier LIS endings.",
-        }
-    elif any(w in text for w in ["cycle", "directed graph", "detect cycle"]):
-        primary = "graph_traversal"
-        rejected = [
+        },
+    },
+    "cycle": {
+        "rejected": [
             RejectedParadigm(paradigm_id="union_find", reason="Union-Find is for undirected connectivity; directed cycles need DFS coloring or similar."),
             RejectedParadigm(paradigm_id="shortest_path", reason="We only need existence of a cycle, not distances."),
-        ]
-        answers = {
+        ],
+        "answers": {
             "graph structure": "Yes – explicit directed graph.",
             "need reachability/ordering": "Yes – back edges to the recursion stack detect cycles.",
-        }
-    elif any(w in text for w in ["coin", "denominations"]) and any(
-        w in text for w in ["us ", "1, 5, 10, 25", "canonical"]
-    ):
-        primary = "greedy_exchange"
-        rejected = [
+        },
+    },
+    "coin_change": {
+        "rejected": [
             RejectedParadigm(
                 paradigm_id="dp_optimal_substructure",
                 reason="For the canonical US denominations the greedy choice property holds; DP is unnecessary.",
@@ -113,14 +104,14 @@ def _mock_classify(profile: ProblemProfile, taxonomy: dict) -> ClassificationRes
                 paradigm_id="math_formula",
                 reason="Still requires a selection process, not a closed formula.",
             ),
-        ]
-        answers = {
+        ],
+        "answers": {
             "greedy choice property": "Yes – for canonical coin systems the largest feasible coin is always safe.",
             "exchange argument": "Yes – standard for canonical denominations.",
-        }
-    elif any(w in text for w in ["divide-and-conquer", "divide and conquer", "merge sort", "mergesort"]):
-        primary = "divide_and_conquer"
-        rejected = [
+        },
+    },
+    "mergesort": {
+        "rejected": [
             RejectedParadigm(
                 paradigm_id="dp_optimal_substructure",
                 reason="Subproblems are independent; no overlapping subproblems that need memoization.",
@@ -129,14 +120,14 @@ def _mock_classify(profile: ProblemProfile, taxonomy: dict) -> ClassificationRes
                 paradigm_id="greedy_exchange",
                 reason="Sorting requires global ordering, not a local greedy choice.",
             ),
-        ]
-        answers = {
+        ],
+        "answers": {
             "independent subproblems": "Yes – left and right halves are independent.",
             "combine step": "Yes – the merge step combines sorted halves.",
-        }
-    elif any(w in text for w in ["koko", "eating bananas", "speed k", "minimum integer k", "capacity to ship"]):
-        primary = "binary_search"
-        rejected = [
+        },
+    },
+    "koko": {
+        "rejected": [
             RejectedParadigm(
                 paradigm_id="dp_optimal_substructure",
                 reason="The feasibility predicate is monotonic in k; binary search on the answer is sufficient and faster.",
@@ -145,39 +136,56 @@ def _mock_classify(profile: ProblemProfile, taxonomy: dict) -> ClassificationRes
                 paradigm_id="greedy_exchange",
                 reason="We are searching for a threshold, not making a sequence of irreversible greedy choices.",
             ),
-        ]
-        answers = {
+        ],
+        "answers": {
             "monotonic property": "Yes – if speed k works, any larger speed also works.",
             "search on answer": "Yes – classic binary search on the answer space.",
-        }
-    elif any(w in text for w in ["two sum", "two-sum", "pair that sums", "two pointers"]):
-        primary = "two_pointers_sliding"
-        rejected = [
+        },
+    },
+    "two_sum": {
+        "rejected": [
             RejectedParadigm(paradigm_id="dp_optimal_substructure", reason="Sorted two-pointer scan is enough; no overlapping subproblems need a table."),
             RejectedParadigm(paradigm_id="binary_search", reason="We need a pair, not a threshold search on a monotonic predicate alone."),
-        ]
-        answers = {"window/pair invariant": "Yes – sorted array allows monotonic two-pointer movement."}
-    elif any(w in text for w in ["longest common subsequence", "lcs"]):
-        primary = "dp_optimal_substructure"
-        rejected = [
+        ],
+        "answers": {"window/pair invariant": "Yes – sorted array allows monotonic two-pointer movement."},
+    },
+    "lcs": {
+        "rejected": [
             RejectedParadigm(paradigm_id="greedy_exchange", reason="Greedy character matching fails on classic LCS counter-examples."),
             RejectedParadigm(paradigm_id="two_pointers_sliding", reason="LCS is not a contiguous window problem."),
-        ]
-        answers = {"overlapping subproblems": "Yes – shared prefixes of both strings."}
-    elif any(w in text for w in ["knapsack", "0/1 knapsack"]):
-        primary = "dp_optimal_substructure"
-        rejected = [
+        ],
+        "answers": {"overlapping subproblems": "Yes – shared prefixes of both strings."},
+    },
+    "knapsack": {
+        "rejected": [
             RejectedParadigm(paradigm_id="greedy_exchange", reason="0/1 knapsack is not fractional; greedy by density can be suboptimal."),
             RejectedParadigm(paradigm_id="math_formula", reason="No closed form for general weights/values."),
-        ]
-        answers = {"optimal substructure": "Yes – include/exclude last item recurrence."}
-    elif any(w in text for w in ["topological", "topo sort"]):
-        primary = "graph_traversal"
-        rejected = [
+        ],
+        "answers": {"optimal substructure": "Yes – include/exclude last item recurrence."},
+    },
+    "topo": {
+        "rejected": [
             RejectedParadigm(paradigm_id="union_find", reason="Union-Find does not produce a linear order of dependencies."),
             RejectedParadigm(paradigm_id="shortest_path", reason="We need a valid order, not distances."),
-        ]
-        answers = {"graph structure": "Yes – directed dependency graph."}
+        ],
+        "answers": {"graph structure": "Yes – directed dependency graph."},
+    },
+}
+
+
+def _mock_classify(profile: ProblemProfile, taxonomy: dict) -> ClassificationResult:
+    """
+    Deterministic fallback used when no API key is available.
+    Simple keyword heuristics so the rest of the pipeline can be exercised.
+    """
+    text = profile.summary + " " + profile.input_type
+    shape = detect_shape(text)
+    details = _SHAPE_DETAILS.get(shape)
+
+    if details is not None:
+        primary = SHAPE_PARADIGM[shape]
+        rejected = details["rejected"]
+        answers = details["answers"]
     else:
         primary = "dp_optimal_substructure"
         rejected = [

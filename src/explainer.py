@@ -22,6 +22,7 @@ from schemas.models import (
     VerificationReport,
     Explanation,
 )
+from src.problem_shapes import detect_shape
 
 TAXONOMY_PATH = Path(__file__).parent.parent / "taxonomy" / "paradigms.yaml"
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
@@ -283,34 +284,28 @@ DFS three-coloring also works for cycle detection, but Union-Find cannot produce
     )
 
 
+_SHAPE_EXPLAINERS = {
+    "activity": _explain_activity,
+    "lis": _explain_lis,
+    "topo": _explain_topo,
+    "cycle": _explain_cycle,
+    "mergesort": _explain_mergesort,
+    "koko": _explain_binary_search_answer,
+    "two_sum": _explain_two_sum,
+    "lcs": _explain_lcs,
+    "knapsack": _explain_knapsack,
+}
+
+
 def _match_explainer(
     profile: ProblemProfile,
     classification: ClassificationResult,
     algorithm: ConcreteAlgorithm,
     verification: VerificationReport,
 ) -> Optional[Explanation]:
-    text = profile.summary.lower()
-    if any(w in text for w in ["activity", "activities", "interval", "intervals", "non-overlapping"]):
-        return _explain_activity(profile, classification, algorithm, verification)
-    if any(w in text for w in ["longest increasing", "lis", "increasing subsequence"]):
-        return _explain_lis(profile, classification, algorithm, verification)
-    if any(w in text for w in ["topological", "topo sort", "topo-sort"]):
-        return _explain_topo(profile, classification, algorithm, verification)
-    if any(w in text for w in ["cycle", "directed graph"]) and "topo" not in text:
-        return _explain_cycle(profile, classification, algorithm, verification)
-    if any(w in text for w in ["merge sort", "mergesort"]) or (
-        "sort" in text and ("divide-and-conquer" in text or "divide and conquer" in text)
-    ):
-        return _explain_mergesort(profile, classification, algorithm, verification)
-    if any(w in text for w in ["koko", "eating bananas", "speed k"]):
-        return _explain_binary_search_answer(profile, classification, algorithm, verification)
-    if any(w in text for w in ["two sum", "two-sum", "two pointers", "pair sum", "two elements sum", "sum to the target"]):
-        return _explain_two_sum(profile, classification, algorithm, verification)
-    if any(w in text for w in ["longest common subsequence", "lcs"]):
-        return _explain_lcs(profile, classification, algorithm, verification)
-    if any(w in text for w in ["knapsack", "0/1"]):
-        return _explain_knapsack(profile, classification, algorithm, verification)
-    return None
+    shape = detect_shape(profile.summary)
+    fn = _SHAPE_EXPLAINERS.get(shape)
+    return fn(profile, classification, algorithm, verification) if fn else None
 
 
 # ---------------------------------------------------------------------------
