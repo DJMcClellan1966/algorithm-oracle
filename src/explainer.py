@@ -95,8 +95,8 @@ Sorting by finish time is essential. Sorting by start time or duration can produ
         "All activities overlap → select the one that finishes earliest.",
     ]
     return Explanation(
-        paradigm_id="greedy_exchange",
-        argument_template_used="exchange_argument",
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
         textbook_why=why.strip() + "\n\n" + _verification_note(verification),
         why_alternatives_fail=_contrastive_from_rejections(classification),
         formal_proof_sketch=None,
@@ -129,8 +129,8 @@ This is optimal substructure with overlapping subproblems; a pure divide-and-con
         "Duplicates: strict inequality means equal elements do not extend the subsequence.",
     ]
     return Explanation(
-        paradigm_id="dp_optimal_substructure",
-        argument_template_used="subproblem_recurrence",
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
         textbook_why=why.strip() + "\n\n" + _verification_note(verification),
         why_alternatives_fail=_contrastive_from_rejections(classification),
         formal_proof_sketch=None,
@@ -161,8 +161,8 @@ Union-Find is the wrong tool here: it tracks undirected connectivity and cannot 
         "DAG with long paths → no cycle.",
     ]
     return Explanation(
-        paradigm_id="graph_traversal",
-        argument_template_used="invariant_or_coloring",
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
         textbook_why=why.strip() + "\n\n" + _verification_note(verification),
         why_alternatives_fail=_contrastive_from_rejections(classification),
         formal_proof_sketch=None,
@@ -189,8 +189,8 @@ The recurrence is T(n) = 2T(n/2) + O(n), which solves to O(n log n) by the Maste
         "Reverse-sorted input → same asymptotic cost.",
     ]
     return Explanation(
-        paradigm_id="divide_and_conquer",
-        argument_template_used="master_theorem_or_induction",
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
         textbook_why=why.strip() + "\n\n" + _verification_note(verification),
         why_alternatives_fail=_contrastive_from_rejections(classification),
         formal_proof_sketch=None,
@@ -217,8 +217,8 @@ A linear scan from k = 1 upward is also correct but slower; dynamic programming 
         "h equal to number of piles and max pile size forces k = max(piles).",
     ]
     return Explanation(
-        paradigm_id="binary_search",
-        argument_template_used="monotonicity",
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
         textbook_why=why.strip() + "\n\n" + _verification_note(verification),
         why_alternatives_fail=_contrastive_from_rejections(classification),
         formal_proof_sketch=None,
@@ -232,8 +232,8 @@ def _explain_two_sum(profile, classification, algorithm, verification):
 
 A nested double loop is correct but slower; dynamic programming is unnecessary for existence of a pair with a given sum once sorting is allowed."""
     return Explanation(
-        paradigm_id="two_pointers_sliding",
-        argument_template_used="invariant_maintenance",
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
         textbook_why=why.strip() + "\n\n" + _verification_note(verification),
         why_alternatives_fail=_contrastive_from_rejections(classification),
         edge_cases_discussed=["Empty or single-element array → false.", "Target requiring the same element twice is rejected when indices must be distinct."],
@@ -245,8 +245,8 @@ def _explain_lcs(profile, classification, algorithm, verification):
 
 Greedy left-to-right matching fails on standard counter-examples; two pointers alone cannot jump over choices that must be reconsidered."""
     return Explanation(
-        paradigm_id="dp_optimal_substructure",
-        argument_template_used="subproblem_recurrence",
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
         textbook_why=why.strip() + "\n\n" + _verification_note(verification),
         why_alternatives_fail=_contrastive_from_rejections(classification),
         edge_cases_discussed=["Either string empty → 0.", "Identical strings → n.", "No characters in common → 0."],
@@ -258,8 +258,8 @@ def _explain_knapsack(profile, classification, algorithm, verification):
 
 Greedy by value/weight density is optimal for fractional knapsack but not for 0/1."""
     return Explanation(
-        paradigm_id="dp_optimal_substructure",
-        argument_template_used="subproblem_recurrence",
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
         textbook_why=why.strip() + "\n\n" + _verification_note(verification),
         why_alternatives_fail=_contrastive_from_rejections(classification),
         edge_cases_discussed=["W = 0 → 0.", "All items heavier than W → 0.", "Single item that fits → its value."],
@@ -271,8 +271,8 @@ def _explain_topo(profile, classification, algorithm, verification):
 
 DFS three-coloring also works for cycle detection, but Union-Find cannot produce a linear order of directed dependencies."""
     return Explanation(
-        paradigm_id="graph_traversal",
-        argument_template_used="invariant_or_coloring",
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
         textbook_why=why.strip() + "\n\n" + _verification_note(verification),
         why_alternatives_fail=_contrastive_from_rejections(classification),
         edge_cases_discussed=[

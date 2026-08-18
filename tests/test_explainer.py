@@ -114,6 +114,21 @@ def test_topo_does_not_reuse_cycle_coloring_explanation():
     assert "gray" not in why
 
 
+def test_paradigm_id_tracks_classification_not_hardcoded_template():
+    """Explanation.paradigm_id must come from the classifier's decision, not a
+    literal baked into whichever template matched on keywords -- these can
+    disagree (e.g. a real LLM classifier vs. this file's own keyword matcher).
+    Deliberately inject a paradigm the activity template does not itself assume.
+    """
+    example = _by_id()["activity_selection"]
+    profile = profile_problem(example["problem"])
+    classification = _classification("binary_search")
+    algorithm = instantiate(profile, classification)
+    explanation = explain(profile, classification, algorithm, _passed_report())
+    assert explanation.paradigm_id == "binary_search"
+    assert explanation.argument_template_used == "monotonicity"
+
+
 def test_paradigm_alone_does_not_select_lis_explanation():
     profile = profile_problem("Compute an optimal value using dynamic programming.")
     classification = _classification("dp_optimal_substructure")
