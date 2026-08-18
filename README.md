@@ -46,7 +46,7 @@ PYTHONPATH=. python -m pytest tests/ -v
 PYTHONPATH=. streamlit run app/streamlit_app.py
 ```
 
-Gatekeeper (human-run; do not trust agent self-reports alone):
+Gatekeeper (human-run; do not trust agent self-reports alone) — creates and installs its own `.venv` automatically if one doesn't exist yet:
 
 ```bash
 ./run_checks.sh          # Unix / Git Bash
@@ -66,9 +66,10 @@ Set `OPENAI_API_KEY` to use the real LLM path instead of offline templates.
 
 ## Status
 
-v1 pipeline is wired and test-backed: Profile → Classify → Instantiate → Verify → Explain.
+v1 pipeline is wired and test-backed: Profile → Classify → Instantiate → Verify → Explain — across **all 11 taxonomy paradigms** (greedy, DP, divide & conquer, graph traversal, shortest path, network flow, backtracking, two pointers, binary search, union-find, math formula). 162 tests passing.
 
-- Labeled classics (LIS, activity selection, directed cycle, …) verify **passed**.
+- Labeled classics (LIS, activity selection, directed cycle, redundant connection, network delay time, climbing stairs, N-Queens count, max-flow value, …) verify **passed**.
+- Every paradigm's real candidate — not just its structure — is checked by differential testing against its own reference, not a stand-in (`test_every_template_candidate_actually_verifies`).
 - Unmatched problems (for example US coin change) **stub** and report `outside_verifiable_range` — they do not steal another template and false-pass.
 - Underspecified graphs hit the clarification gate; `force=True` bypasses it.
 - Streamlit shows **pseudocode first**, with a toggle to Python when a `def solve` candidate exists.
