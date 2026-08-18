@@ -20,7 +20,9 @@ from verification.harness import (
     generate_adversarial_arrays,
     generate_adversarial_digraphs,
     generate_adversarial_intervals,
+    generate_adversarial_knapsacks,
     generate_adversarial_koko,
+    generate_adversarial_lcs_pairs,
     generate_adversarial_pairs,
     generate_adversarial_flow_networks,
     generate_adversarial_queens_counts,
@@ -30,13 +32,16 @@ from verification.harness import (
     generate_random_digraph,
     generate_random_flow_network,
     generate_random_intervals,
+    generate_random_knapsack,
     generate_random_koko,
+    generate_random_lcs_pair,
     generate_random_pairs,
     generate_random_queens_count,
     generate_random_stair_count,
     generate_random_tree_plus_edge,
     generate_random_weighted_digraph,
     run_verification_for_paradigm,
+    run_verification_for_shape,
     run_verification_from_source,
 )
 
@@ -182,6 +187,61 @@ def test_flow_network_generators_have_valid_shapes():
     by_desc = {c["desc"]: c["input"] for c in adv}
     assert by_desc["no edges"] == (2, [], 1, 2)
     assert by_desc["source equals sink"] == (1, [], 1, 1)
+
+
+def test_lcs_pair_generators_have_valid_shapes():
+    random.seed(1)
+    for _ in range(20):
+        A, B = generate_random_lcs_pair()
+        assert isinstance(A, list) and isinstance(B, list)
+        assert len(A) <= 6 and len(B) <= 6
+    adv = generate_adversarial_lcs_pairs()
+    by_desc = {c["desc"]: c["input"] for c in adv}
+    assert by_desc["both empty"] == ([], [])
+    assert by_desc["partial overlap"] == ([1, 2, 3], [1, 3])
+
+
+def test_knapsack_generators_have_valid_shapes():
+    random.seed(1)
+    for _ in range(20):
+        weights, values, W = generate_random_knapsack()
+        assert len(weights) == len(values)
+        assert all(w >= 1 for w in weights)
+        assert W >= 0
+    adv = generate_adversarial_knapsacks()
+    by_desc = {c["desc"]: c["input"] for c in adv}
+    assert by_desc["no items"] == ([], [], 0)
+    assert by_desc["item heavier than capacity"] == ([5], [10], 4)
+
+
+def test_run_verification_for_shape_routes_lcs_and_knapsack():
+    """These share dp_optimal_substructure's paradigm_id with plain-array DP,
+    so they must route by shape, not fall through to the generic array path."""
+    random.seed(1)
+    lcs_report = run_verification_for_shape(
+        _IDENTITY_SOLVE, _IDENTITY_SOLVE, "lcs", "dp_optimal_substructure", num_random=5
+    )
+    assert lcs_report.num_random_tests == 5
+    assert lcs_report.num_adversarial_tests == len(generate_adversarial_lcs_pairs())
+    assert lcs_report.status == "passed"
+
+    knapsack_report = run_verification_for_shape(
+        _IDENTITY_SOLVE, _IDENTITY_SOLVE, "knapsack", "dp_optimal_substructure", num_random=5
+    )
+    assert knapsack_report.num_random_tests == 5
+    assert knapsack_report.num_adversarial_tests == len(generate_adversarial_knapsacks())
+    assert knapsack_report.status == "passed"
+
+
+def test_run_verification_for_shape_falls_back_to_paradigm_routing():
+    """A shape with no special case (including None, e.g. plain LIS) must
+    fall through to run_verification_for_paradigm unchanged."""
+    random.seed(1)
+    report = run_verification_for_shape(
+        _IDENTITY_SOLVE, _IDENTITY_SOLVE, None, "dp_optimal_substructure", num_random=5
+    )
+    assert report.num_adversarial_tests == len(generate_adversarial_arrays())
+    assert report.status == "passed"
 
 
 def test_weighted_digraph_generators_have_valid_shapes():

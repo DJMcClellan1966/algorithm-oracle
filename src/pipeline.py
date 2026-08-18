@@ -1,9 +1,9 @@
 """
 Core orchestration for Algorithm Oracle.
 
-Each stage returns structured Pydantic models.
-Phases 1–3.5 are wired (profiler light, classifier, instantiator, verification).
-Phase 4 (explainer) is still a stub.
+Each stage returns structured Pydantic models. All phases are fully wired --
+profiler, classifier, instantiator, verification, and explainer -- across
+all 11 taxonomy paradigms.
 """
 
 from __future__ import annotations
@@ -69,8 +69,6 @@ def instantiate(profile: ProblemProfile, classification: ClassificationResult) -
 
 def verify(algorithm: ConcreteAlgorithm, *, function_name: str = "solve") -> VerificationReport:
     """Differential testing using python_candidate vs brute_force_reference."""
-    from verification.harness import run_verification_for_paradigm
-
     if not algorithm.brute_force_reference:
         return VerificationReport(
             status="outside_verifiable_range",
@@ -84,78 +82,17 @@ def verify(algorithm: ConcreteAlgorithm, *, function_name: str = "solve") -> Ver
             message="No executable candidate source available (python_candidate missing).",
         )
 
-    # Problem-specific shapes that share a paradigm id (e.g. LCS/knapsack under DP)
-    notes = (algorithm.notes or "").lower()
-    from verification.harness import (
-        run_verification_for_paradigm,
-        run_verification_from_source,
-        compile_function,
-        differential_test,
-        generate_random_digraph,
-    )
-    import random as _rnd
+    from src.problem_shapes import detect_shape
+    from verification.harness import run_verification_for_shape
 
-    if "lcs" in notes or "longest common subsequence" in notes:
-        from verification.harness import compile_function, differential_test
-        try:
-            cand = compile_function(candidate_src)
-            ref = compile_function(algorithm.brute_force_reference)
-        except ValueError as e:
-            return VerificationReport(status="failed", message=f"Compilation error: {e}")
-        inputs, descs = [], []
-        for _ in range(15):
-            n, m = _rnd.randint(0, 6), _rnd.randint(0, 6)
-            A = [_rnd.randint(0, 4) for _ in range(n)]
-            B = [_rnd.randint(0, 4) for _ in range(m)]
-            inputs.append((A, B))
-            descs.append(repr((A, B))[:50])
-        adv = [([], []), ([1], [1]), ([1, 2, 3], [1, 3]), ([3, 2, 1], [1, 2, 3])]
-        for a in adv:
-            inputs.append(a)
-            descs.append(repr(a))
-        passed, failed = differential_test(cand, ref, inputs, descs)
-        total = len(inputs)
-        if failed:
-            return VerificationReport(status="failed", num_random_tests=15, num_adversarial_tests=len(adv),
-                                      passed_count=passed, failed_cases=failed,
-                                      message=f"Failed {len(failed)} / {total} tests")
-        return VerificationReport(status="passed", num_random_tests=15, num_adversarial_tests=len(adv),
-                                  passed_count=passed, message=f"Passed all {total} tests (random + adversarial)")
-
-    if "0/1 knapsack" in notes or "knapsack" in notes:
-        from verification.harness import compile_function, differential_test
-        try:
-            cand = compile_function(candidate_src)
-            ref = compile_function(algorithm.brute_force_reference)
-        except ValueError as e:
-            return VerificationReport(status="failed", message=f"Compilation error: {e}")
-        inputs, descs = [], []
-        for _ in range(15):
-            n = _rnd.randint(0, 5)
-            weights = [_rnd.randint(1, 8) for _ in range(n)]
-            values = [_rnd.randint(1, 10) for _ in range(n)]
-            W = _rnd.randint(0, 15)
-            inputs.append((weights, values, W))
-            descs.append(f"n={n},W={W}")
-        adv = [([], [], 0), ([1], [5], 0), ([2, 3], [3, 4], 5), ([5], [10], 4)]
-        for a in adv:
-            inputs.append(a)
-            descs.append(repr(a)[:40])
-        passed, failed = differential_test(cand, ref, inputs, descs)
-        total = len(inputs)
-        if failed:
-            return VerificationReport(status="failed", num_random_tests=15, num_adversarial_tests=len(adv),
-                                      passed_count=passed, failed_cases=failed,
-                                      message=f"Failed {len(failed)} / {total} tests")
-        return VerificationReport(status="passed", num_random_tests=15, num_adversarial_tests=len(adv),
-                                  passed_count=passed, message=f"Passed all {total} tests (random + adversarial)")
-
-    return run_verification_for_paradigm(
+    shape = detect_shape(algorithm.notes or "")
+    return run_verification_for_shape(
         candidate_src,
         algorithm.brute_force_reference,
+        shape,
         algorithm.paradigm_id,
         function_name=function_name,
-        num_random=20,
+        num_random=15 if shape in ("lcs", "knapsack") else 20,
     )
 
 
@@ -173,7 +110,7 @@ def verify_sources(
 
 
 # ---------------------------------------------------------------------------
-# Phase 4 – explainer (stub)
+# Phase 4 – explainer
 # ---------------------------------------------------------------------------
 
 def explain(

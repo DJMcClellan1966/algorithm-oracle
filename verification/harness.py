@@ -253,6 +253,47 @@ def generate_random_queens_count(max_n: int = 7) -> int:
     return random.randint(0, max_n)
 
 
+def generate_random_lcs_pair(max_len: int = 6, alphabet_size: int = 5) -> tuple:
+    """(A, B): two sequences of small integers for LCS -- dp_optimal_substructure
+    shares its paradigm_id with plain-array DP, so this needs its own dispatch
+    keyed by shape, not paradigm_id."""
+    n, m = random.randint(0, max_len), random.randint(0, max_len)
+    A = [random.randint(0, alphabet_size - 1) for _ in range(n)]
+    B = [random.randint(0, alphabet_size - 1) for _ in range(m)]
+    return (A, B)
+
+
+def generate_adversarial_lcs_pairs() -> list[dict]:
+    return [
+        {"desc": "both empty", "input": ([], [])},
+        {"desc": "single identical element", "input": ([1], [1])},
+        {"desc": "partial overlap", "input": ([1, 2, 3], [1, 3])},
+        {"desc": "reversed vs sorted", "input": ([3, 2, 1], [1, 2, 3])},
+    ]
+
+
+def generate_random_knapsack(
+    max_items: int = 5, max_weight: int = 8, max_value: int = 10, max_capacity: int = 15
+) -> tuple:
+    """(weights, values, W) for 0/1 knapsack -- same dp_optimal_substructure
+    paradigm_id as plain-array DP and LCS, so this also needs shape-based
+    dispatch rather than paradigm_id alone."""
+    n = random.randint(0, max_items)
+    weights = [random.randint(1, max_weight) for _ in range(n)]
+    values = [random.randint(1, max_value) for _ in range(n)]
+    W = random.randint(0, max_capacity)
+    return (weights, values, W)
+
+
+def generate_adversarial_knapsacks() -> list[dict]:
+    return [
+        {"desc": "no items", "input": ([], [], 0)},
+        {"desc": "single item, zero capacity", "input": ([1], [5], 0)},
+        {"desc": "two items, tight capacity", "input": ([2, 3], [3, 4], 5)},
+        {"desc": "item heavier than capacity", "input": ([5], [10], 4)},
+    ]
+
+
 def generate_random_flow_network(n: int, edge_prob: float = 0.5, max_cap: int = 10) -> tuple:
     """(n, edges, s, t): n nodes labeled 1..n, edges = list of (u, v, cap)
     directed edges with positive integer capacities, s=1, t=n."""
@@ -525,6 +566,81 @@ def run_verification_for_paradigm(
             candidate, reference, random_n_range=(0, 8), num_random=num_random
         )
 
+    passed_r, failed_r = differential_test(candidate, reference, random_inputs)
+    passed_a, failed_a = differential_test(
+        candidate, reference, [c["input"] for c in adv], [c["desc"] for c in adv]
+    )
+    total = num_random + len(adv)
+    total_passed = passed_r + passed_a
+    failed = failed_r + failed_a
+    if failed:
+        return VerificationReport(
+            status="failed",
+            num_random_tests=num_random,
+            num_adversarial_tests=len(adv),
+            passed_count=total_passed,
+            failed_cases=failed,
+            message=f"Failed {len(failed)} / {total} tests",
+        )
+    return VerificationReport(
+        status="passed",
+        num_random_tests=num_random,
+        num_adversarial_tests=len(adv),
+        passed_count=total_passed,
+        failed_cases=[],
+        message=f"Passed all {total} tests (random + adversarial)",
+    )
+
+
+def run_verification_for_shape(
+    candidate_source: str,
+    reference_source: str,
+    shape: Optional[str],
+    paradigm_id: str,
+    *,
+    function_name: str = "solve",
+    num_random: int = 15,
+) -> VerificationReport:
+    """
+    Some paradigm ids cover more than one input shape -- dp_optimal_substructure
+    spans plain-array DP, LCS pairs, and 0/1 knapsack tuples -- so paradigm_id
+    alone isn't enough to pick the right generator. Route by the finer-grained
+    shape (from src.problem_shapes.detect_shape) first; fall back to
+    run_verification_for_paradigm for any shape with no special case.
+    """
+    if shape == "lcs":
+        adv = generate_adversarial_lcs_pairs()
+        random_gen = generate_random_lcs_pair
+    elif shape == "knapsack":
+        adv = generate_adversarial_knapsacks()
+        random_gen = generate_random_knapsack
+    else:
+        return run_verification_for_paradigm(
+            candidate_source,
+            reference_source,
+            paradigm_id,
+            function_name=function_name,
+            num_random=num_random,
+        )
+
+    try:
+        candidate = compile_function(candidate_source, function_name)
+        reference = compile_function(reference_source, function_name)
+    except ValueError as e:
+        return VerificationReport(
+            status="failed",
+            message=f"Compilation error: {e}",
+            failed_cases=[
+                TestCaseResult(
+                    input_desc="(compile)",
+                    expected="successful compile",
+                    actual=str(e),
+                    passed=False,
+                )
+            ],
+        )
+
+    random_inputs = [random_gen() for _ in range(num_random)]
     passed_r, failed_r = differential_test(candidate, reference, random_inputs)
     passed_a, failed_a = differential_test(
         candidate, reference, [c["input"] for c in adv], [c["desc"] for c in adv]
