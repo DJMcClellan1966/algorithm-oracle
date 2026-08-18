@@ -485,6 +485,25 @@ def generate_adversarial_knapsacks() -> list[dict]:
     ]
 
 
+US_COINS = [1, 5, 10, 25]
+
+
+def generate_random_coin_change(max_amount: int = 40) -> tuple:
+    """(coins, amount) using US denominations so greedy matches a general reference."""
+    return (list(US_COINS), random.randint(0, max_amount))
+
+
+def generate_adversarial_coin_changes() -> list[dict]:
+    return [
+        {"desc": "zero amount", "input": (list(US_COINS), 0)},
+        {"desc": "single penny", "input": (list(US_COINS), 1)},
+        {"desc": "exact quarter", "input": (list(US_COINS), 25)},
+        {"desc": "four cents", "input": (list(US_COINS), 4)},
+        {"desc": "thirty cents", "input": (list(US_COINS), 30)},
+        {"desc": "forty cents", "input": (list(US_COINS), 40)},
+    ]
+
+
 def generate_random_flow_network(n: int, edge_prob: float = 0.5, max_cap: int = 10) -> tuple:
     """(n, edges, s, t): n nodes labeled 1..n, edges = list of (u, v, cap)
     directed edges with positive integer capacities, s=1, t=n."""
@@ -789,6 +808,9 @@ def run_verification_for_shape(
     elif shape == "knapsack":
         adv = generate_adversarial_knapsacks()
         random_gen = generate_random_knapsack
+    elif shape == "coin_change":
+        adv = generate_adversarial_coin_changes()
+        random_gen = generate_random_coin_change
     else:
         return run_verification_for_paradigm(
             candidate_source,

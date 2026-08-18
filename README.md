@@ -66,10 +66,10 @@ Set `OPENAI_API_KEY` (or `ANTHROPIC_API_KEY`) to use the real LLM path instead o
 
 ## Status
 
-v1 pipeline is wired and test-backed: Profile → Classify → Instantiate → Verify → Explain — across **all 11 taxonomy paradigms** (greedy, DP, divide & conquer, graph traversal, shortest path, network flow, backtracking, two pointers, binary search, union-find, math formula). 162 tests passing.
+v1 pipeline is wired and test-backed: Profile → Classify → Instantiate → Verify → Explain — across **all 11 taxonomy paradigms** (greedy, DP, divide & conquer, graph traversal, shortest path, network flow, backtracking, two pointers, binary search, union-find, math formula).
 
-- Labeled classics (LIS, activity selection, directed cycle, redundant connection, network delay time, climbing stairs, N-Queens count, max-flow value, …) verify **passed**.
+- Labeled classics (LIS, activity selection, directed cycle, US coin change, redundant connection, network delay time, climbing stairs, N-Queens count, max-flow value, …) verify **passed**.
 - Every paradigm's real candidate — not just its structure — is checked by differential testing against its own reference, not a stand-in (`test_every_template_candidate_actually_verifies`).
-- Unmatched problems (for example US coin change) **stub** and report `outside_verifiable_range` — they do not steal another template and false-pass.
+- Unmatched problems **stub** and report `outside_verifiable_range` — they do not steal another template and false-pass. A negative corpus in `examples/negative_problems.json` pins phrases that must not become a verified classic.
 - Underspecified graphs hit the clarification gate; `force=True` bypasses it.
 - Streamlit shows **pseudocode first**, with a toggle to Python when a `def solve` candidate exists.

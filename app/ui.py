@@ -18,6 +18,10 @@ EXAMPLES = {
         "You are given a list of activities, each with a start time and a finish time. "
         "Select the largest possible set of activities so that no two overlap."
     ),
+    "US coin change (canonical greedy)": (
+        "Given US coin denominations (1, 5, 10, 25) and a target amount, "
+        "find the minimum number of coins that sum to the amount."
+    ),
     "Directed cycle detection": (
         "Determine whether a directed graph contains a cycle."
     ),

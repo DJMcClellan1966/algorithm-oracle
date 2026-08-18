@@ -24,8 +24,8 @@ Plausible-looking algorithms are not enough. Classification must be explicit, im
 
 ### Epic 3 — Surfaces
 1. CLI / Streamlit UI: pseudocode primary, toggle to Python
-2. Offline templates for all 11 taxonomy paradigms: activity selection, LIS, directed cycle, coin change (stubbed by design), mergesort, Koko binary search, two-sum, LCS, 0/1 knapsack, topo sort, redundant connection (union-find), network delay time (shortest path), climbing stairs (math formula), N-Queens count (backtracking), max-flow value (network flow)
-3. Eval corpus regression (labeled paradigms)
+2. Offline templates for all 11 taxonomy paradigms: activity selection, LIS, directed cycle, US coin change (greedy; non-canonical contrast), mergesort, Koko binary search, two-sum, LCS, 0/1 knapsack, topo sort, redundant connection (union-find), network delay time (shortest path), climbing stairs (math formula), N-Queens count (backtracking), max-flow value (network flow)
+3. Eval corpus regression (labeled paradigms + negative “must not classify / must not pass” cases)
 
 ## Out of scope (v1)
 - Remote/cloud sandbox execution of untrusted code

@@ -1,23 +1,28 @@
 # Next Steps
 
-## Agent-ready scaffolding (done)
-- [x] PRODUCT.md — scope, harness-first success criteria
-- [x] AGENTS.md — plan/one-leaf/git/silent-mutation/no-secrets rules
-- [x] BUILD_PLAN.md — Epic 1 harness → Epic 2 pipeline → Epic 3 surfaces
-- [x] .grokignore — secrets/caches out of agent context
-- [x] run_checks.sh / run_checks.ps1 — human gatekeeper (pytest + LIS smoke)
+v1 + P0/P1/P2 are in-repo: 11 paradigms, template-first LLM, word-boundary
+shapes, real topo/activity checks, call timeouts, US coin-change template,
+negative eval corpus.
 
 ## Use with Grok CLI
 From this repository root:
 
 ```text
 grok
-# Read PRODUCT.md, AGENTS.md, BUILD_PLAN.md. State next task. No code.
+# Read PRODUCT.md, AGENTS.md, NEXT_STEPS.md. State next task. No code.
 ```
 
-Then: Plan only for next task ID → implement one leaf → run `./run_checks.sh` or `.\run_checks.ps1` yourself → commit → next.
+Then: Plan only for next leaf → implement one leaf → run `.\run_checks.ps1` (or `./run_checks.sh`) yourself → commit → next.
 
-## Already in-repo
-Epics 1–3: pipeline, offline templates, verification generators, Streamlit UI,
-classifier regression, instantiator/explainer tests, `run_oracle` end-to-end.
-Unmatched problems stub with `outside_verifiable_range`.
+## Next leaves (do not start until the previous is accepted)
+
+### P3 — surfaces and typed response
+- `run_oracle` returns a typed model (optional classification/algorithm when gated)
+- Tiny CLI (`python -m src` or `scripts/oracle.py`) matching PRODUCT’s “CLI / Streamlit”
+- Streamlit: template-vs-LLM badge; add missing dropdown examples (two-sum, LCS, knapsack, topo) if still absent
+- Isolate `gatekeeper_smoke.py` / demos from ambient `OPENAI_API_KEY` / `OLLAMA_MODEL`
+
+### Later
+- Persist `shape` from the profile into every stage’s logs in the UI
+- More labeled negatives as new false-match bugs are found
+- Do not weaken Epic 1 to greenwash any of the above

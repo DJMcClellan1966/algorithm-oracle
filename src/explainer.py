@@ -76,6 +76,25 @@ def _verification_note(verification: VerificationReport) -> str:
 # Hand-written textbook explanations (offline templates)
 # ---------------------------------------------------------------------------
 
+def _explain_coin_change(profile, classification, algorithm, verification):
+    why = """The US denominations 1, 5, 10, 25 form a canonical coin system: it is always safe to take as many of the largest remaining denomination as will fit.
+
+Take any optimal solution that uses fewer of that largest coin than the greedy choice. Those leftover cents can be rewritten as additional copies of the large coin plus a smaller remainder, without increasing the number of coins — the standard exchange argument for canonical systems. The leftover after the greedy choice is an identical smaller instance, so induction gives optimality.
+
+This fails as soon as the system is not canonical. Coins 1, 3, 4 and amount 6: greedy takes 4+1+1 (3 coins); 3+3 is 2 coins. Non-canonical change needs DP, not greedy."""
+    return Explanation(
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
+        textbook_why=why.strip() + "\n\n" + _verification_note(verification),
+        why_alternatives_fail=_contrastive_from_rejections(classification),
+        edge_cases_discussed=[
+            "amount = 0 → 0 coins.",
+            "amount exactly one denomination → 1 coin.",
+            "Non-canonical (1, 3, 4) for 6 → greedy 3, optimal 2.",
+        ],
+    )
+
+
 def _explain_activity(
     profile: ProblemProfile,
     classification: ClassificationResult,
@@ -381,6 +400,7 @@ The input is guaranteed to be a tree (n-1 edges) plus exactly one additional edg
 
 
 _SHAPE_EXPLAINERS = {
+    "coin_change": _explain_coin_change,
     "activity": _explain_activity,
     "lis": _explain_lis,
     "topo": _explain_topo,

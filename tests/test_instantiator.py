@@ -24,8 +24,8 @@ from verification.harness import generate_adversarial_lcs_pairs
 EXAMPLES_PATH = ROOT / "examples" / "test_problems.json"
 
 # Labeled problems that have a dedicated offline template.
-# coin_change_canonical is greedy but has no coin template — must not become activity selection.
 TEMPLATE_MARKERS = {
+    "coin_change_canonical": "canonical US coin change",
     "activity_selection": "activity selection",
     "lis": "Classic LIS",
     "directed_cycle": "cycle detection",
@@ -131,14 +131,14 @@ def test_coin_change_does_not_reuse_activity_template():
     example = _by_id()["coin_change_canonical"]
     algo = _instantiate_example(example)
     assert algo.paradigm_id == "greedy_exchange"
-    assert algo.python_candidate is None
-    assert algo.brute_force_reference is None
+    assert algo.shape == "coin_change"
+    assert algo.python_candidate and "def solve" in algo.python_candidate
     notes = (algo.notes or "").lower()
     assert "activity" not in notes
     assert "interval" not in notes
-    assert "stub" in notes or "template" in notes
+    assert "canonical" in notes
     report = verify(algo)
-    assert report.status == "outside_verifiable_range"
+    assert report.status == "passed", report.message
 
 
 def test_paradigm_alone_does_not_select_a_default_problem():
@@ -156,13 +156,6 @@ def test_known_template_records_shape(example_id):
     algo = _instantiate_example(example)
     assert algo.shape == detect_shape(example["problem"])
     assert algo.shape is not None
-
-
-def test_coin_change_stub_records_shape():
-    example = _by_id()["coin_change_canonical"]
-    algo = _instantiate_example(example)
-    assert algo.shape == "coin_change"
-    assert algo.python_candidate is None
 
 
 def test_verify_uses_persisted_shape_when_notes_have_no_keywords():
@@ -189,19 +182,6 @@ def test_templated_shape_does_not_call_llm(monkeypatch):
     algo = _instantiate_example(example)
     assert "Classic LIS" in (algo.notes or "")
     assert algo.shape == "lis"
-
-
-def test_known_shape_without_code_template_does_not_call_llm(monkeypatch):
-    monkeypatch.setattr("src.llm_client.has_llm_backend", lambda: True)
-
-    def boom(*_a, **_k):
-        raise AssertionError("LLM must not run for a known untemplated shape")
-
-    monkeypatch.setattr("src.instantiator._llm_instantiate", boom)
-    example = _by_id()["coin_change_canonical"]
-    algo = _instantiate_example(example)
-    assert algo.python_candidate is None
-    assert algo.shape == "coin_change"
 
 
 def test_unmatched_problem_calls_llm_when_backend_present(monkeypatch):

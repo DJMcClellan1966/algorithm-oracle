@@ -92,7 +92,7 @@ def verify(algorithm: ConcreteAlgorithm, *, function_name: str = "solve") -> Ver
         shape,
         algorithm.paradigm_id,
         function_name=function_name,
-        num_random=15 if shape in ("lcs", "knapsack") else 20,
+        num_random=15 if shape in ("lcs", "knapsack", "coin_change") else 20,
     )
 
 

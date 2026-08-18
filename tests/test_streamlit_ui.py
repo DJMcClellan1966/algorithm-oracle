@@ -70,6 +70,7 @@ def test_examples_cover_dp_greedy_graph_and_gate():
 def test_examples_cover_all_five_added_paradigms():
     """The dropdown must not silently lag behind the paradigms the pipeline
     actually supports -- these five were added after the original six."""
+    assert "US coin change (canonical greedy)" in EXAMPLES
     assert "Redundant connection (Union-Find)" in EXAMPLES
     assert "Network delay time (Dijkstra)" in EXAMPLES
     assert "Climbing stairs" in EXAMPLES

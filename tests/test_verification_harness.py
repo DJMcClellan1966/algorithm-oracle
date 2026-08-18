@@ -24,6 +24,7 @@ from verification.harness import (
     generate_adversarial_arrays,
     generate_adversarial_digraphs,
     generate_adversarial_intervals,
+    generate_adversarial_coin_changes,
     generate_adversarial_knapsacks,
     generate_adversarial_koko,
     generate_adversarial_lcs_pairs,
@@ -33,6 +34,9 @@ from verification.harness import (
     generate_adversarial_stair_counts,
     generate_adversarial_tree_plus_edge,
     generate_adversarial_weighted_digraphs,
+    compile_function,
+    differential_test,
+    generate_random_coin_change,
     generate_random_digraph,
     generate_random_flow_network,
     generate_random_intervals,
@@ -218,6 +222,18 @@ def test_knapsack_generators_have_valid_shapes():
     assert by_desc["item heavier than capacity"] == ([5], [10], 4)
 
 
+def test_coin_change_generators_have_valid_shapes():
+    random.seed(1)
+    for _ in range(20):
+        coins, amount = generate_random_coin_change()
+        assert coins == [1, 5, 10, 25]
+        assert 0 <= amount <= 40
+    adv = generate_adversarial_coin_changes()
+    by_desc = {c["desc"]: c["input"] for c in adv}
+    assert by_desc["zero amount"] == ([1, 5, 10, 25], 0)
+    assert by_desc["forty cents"] == ([1, 5, 10, 25], 40)
+
+
 def test_run_verification_for_shape_routes_lcs_and_knapsack():
     """These share dp_optimal_substructure's paradigm_id with plain-array DP,
     so they must route by shape, not fall through to the generic array path."""
@@ -235,6 +251,13 @@ def test_run_verification_for_shape_routes_lcs_and_knapsack():
     assert knapsack_report.num_random_tests == 5
     assert knapsack_report.num_adversarial_tests == len(generate_adversarial_knapsacks())
     assert knapsack_report.status == "passed"
+
+    coin_report = run_verification_for_shape(
+        _IDENTITY_SOLVE, _IDENTITY_SOLVE, "coin_change", "greedy_exchange", num_random=5
+    )
+    assert coin_report.num_random_tests == 5
+    assert coin_report.num_adversarial_tests == len(generate_adversarial_coin_changes())
+    assert coin_report.status == "passed"
 
 
 def test_run_verification_for_shape_falls_back_to_paradigm_routing():
@@ -497,3 +520,20 @@ def test_hanging_candidate_fails_with_timeout():
     assert report.failed_cases
     actual = str(report.failed_cases[0].actual)
     assert "Timeout" in actual
+
+
+def test_greedy_coin_change_is_wrong_on_noncanonical_instance():
+    """The US-greedy candidate must not silently match a general reference
+    on the classic 1,3,4 / amount-6 counter-example."""
+    from src.instantiator import _template_coin_change
+
+    algo = _template_coin_change()
+    greedy = compile_function(algo.python_candidate)
+    reference = compile_function(algo.brute_force_reference)
+    passed, failed = differential_test(
+        greedy, reference, [([1, 3, 4], 6)], ["noncanonical 6"]
+    )
+    assert passed == 0
+    assert failed
+    assert failed[0].expected == 2
+    assert failed[0].actual == 3

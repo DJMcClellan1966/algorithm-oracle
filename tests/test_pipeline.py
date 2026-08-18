@@ -81,6 +81,12 @@ END_TO_END = [
         "network_flow",
         "passed",
     ),
+    (
+        "Given US coin denominations (1, 5, 10, 25) and a target amount, "
+        "find the minimum number of coins that sum to the amount.",
+        "greedy_exchange",
+        "passed",
+    ),
 ]
 
 
@@ -137,12 +143,8 @@ def test_force_true_bypasses_clarification_gate():
 
 
 def test_unmatched_problem_does_not_claim_passed():
-    result = run_oracle(
-        "Given US coin denominations (1, 5, 10, 25) and a target amount, "
-        "find the minimum number of coins that sum to the amount."
-    )
+    result = run_oracle("Compute an optimal value using dynamic programming.")
     _assert_full_dict(result, gated=False)
-    assert result["classification"].primary_paradigm_id == "greedy_exchange"
     assert result["algorithm"].python_candidate is None
     assert result["verification"].status == "outside_verifiable_range"
 

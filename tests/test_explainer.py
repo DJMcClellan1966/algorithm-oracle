@@ -38,6 +38,7 @@ EXPLAINER_EXPECTATIONS = {
     "climbing_stairs": ("mathematical_derivation", "Binet"),
     "n_queens_count": ("search_tree_pruning", "dead end"),
     "max_flow": ("maxflow_mincut", "residual"),
+    "coin_change_canonical": ("exchange_argument", "canonical"),
 }
 
 
@@ -111,7 +112,9 @@ def test_coin_change_does_not_reuse_activity_explanation():
     why = explanation.textbook_why.lower()
     assert "earliest" not in why
     assert "activity" not in why
-    assert "no specialized explanation template" in why
+    assert "canonical" in why
+    assert "1, 3, 4" in why
+    assert "no specialized explanation template" not in why
 
 
 def test_topo_does_not_reuse_cycle_coloring_explanation():

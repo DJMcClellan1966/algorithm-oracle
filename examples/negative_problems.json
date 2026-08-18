@@ -1,0 +1,33 @@
+[
+  {
+    "id": "list_sum_is_not_lis",
+    "problem": "Given a list of numbers, compute their sum.",
+    "must_not_shape": ["lis", "two_sum", "lcs", "coin_change"],
+    "must_not_claim_passed": true
+  },
+  {
+    "id": "list_two_sum_is_not_lis",
+    "problem": "Given a list of integers, determine whether any two elements sum to the target.",
+    "must_not_shape": ["lis"],
+    "expected_shape": "two_sum"
+  },
+  {
+    "id": "generic_dp_is_not_a_classic",
+    "problem": "Compute an optimal value using dynamic programming.",
+    "must_not_shape": ["lis", "lcs", "knapsack"],
+    "must_not_claim_passed": true
+  },
+  {
+    "id": "noncanonical_coins_are_not_greedy_shape",
+    "problem": "Given coin denominations 1, 3, 4 and a target amount, find the minimum number of coins.",
+    "must_not_shape": ["coin_change", "activity", "knapsack"],
+    "must_not_claim_passed": true,
+    "notes": "Missing a canonical/US cue — greedy is not safe; do not steal the US template."
+  },
+  {
+    "id": "sort_without_divide_is_not_mergesort",
+    "problem": "Sort an array of integers into nondecreasing order.",
+    "must_not_shape": ["mergesort", "lis"],
+    "must_not_claim_passed": true
+  }
+]

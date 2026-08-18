@@ -988,7 +988,79 @@ function solve(n, edges, s, t):
     )
 
 
+def _template_coin_change() -> ConcreteAlgorithm:
+    """Canonical US coin change: greedy is optimal. Reference is general (any system)."""
+    pseudocode = """\
+Sort denominations largest-first
+remaining = amount
+count = 0
+for each coin c:
+    take remaining // c coins of that denomination
+    remaining = remaining % c
+if remaining != 0: return impossible
+return count
+"""
+    candidate = '''\
+def solve(data):
+    """data = (coins, amount). Canonical greedy min-coin count."""
+    coins, amount = data
+    if amount == 0:
+        return 0
+    remaining = amount
+    count = 0
+    for c in sorted(coins, reverse=True):
+        if c <= 0:
+            continue
+        n = remaining // c
+        count += n
+        remaining -= n * c
+    if remaining != 0:
+        return -1
+    return count
+'''
+    reference = '''\
+def solve(data):
+    coins, amount = data
+    if amount == 0:
+        return 0
+    memo = {0: 0}
+    def rec(remain):
+        if remain in memo:
+            return memo[remain]
+        if remain < 0:
+            return amount + 1
+        best = amount + 1
+        for c in coins:
+            if c > 0:
+                best = min(best, 1 + rec(remain - c))
+        memo[remain] = best
+        return best
+    ans = rec(amount)
+    return ans if ans <= amount else -1
+'''
+    return ConcreteAlgorithm(
+        paradigm_id="greedy_exchange",
+        loop_invariant_or_key_insight=(
+            "After taking as many of the current largest remaining denomination as fit, "
+            "the leftover is a smaller instance of the same problem. For a canonical coin "
+            "system (US 1, 5, 10, 25) that greedy choice is always part of some optimal "
+            "solution; an exchange argument replaces any larger leftover with more of the "
+            "current coin without increasing the count."
+        ),
+        pseudocode=pseudocode.strip(),
+        time_complexity="O(k + log amount) after sorting k denominations",
+        space_complexity="O(1) extra (greedy); reference memo is O(amount)",
+        brute_force_reference=reference.strip(),
+        python_candidate=candidate.strip(),
+        notes=(
+            "Canonical US coin change (greedy). Greedy is not safe on non-canonical "
+            "systems (e.g. 1, 3, 4 for amount 6)."
+        ),
+    )
+
+
 TEMPLATES = {
+    "coin_change": _template_coin_change,
     "max_flow": _template_max_flow,
     "n_queens": _template_n_queens,
     "climbing_stairs": _template_climbing_stairs,
