@@ -35,6 +35,7 @@ TEMPLATE_MARKERS = {
     "topo_sort": "topological sort",
     "redundant_connection": "Union-Find",
     "network_delay": "Dijkstra",
+    "climbing_stairs": "Climbing Stairs",
 }
 
 

@@ -74,6 +74,15 @@ _SHAPE_DETAILS: dict[str, dict] = {
             "online or offline": "Online – edges are processed one at a time in the given order.",
         },
     },
+    "climbing_stairs": {
+        "rejected": [
+            RejectedParadigm(paradigm_id="dp_optimal_substructure", reason="A full memoized table is unnecessary; the recurrence only ever needs the last two values."),
+            RejectedParadigm(paradigm_id="backtracking", reason="No search or pruning is needed; the count follows directly from a linear recurrence."),
+        ],
+        "answers": {
+            "closed-form or direct combinatorial solution": "Yes – ways(n) = ways(n-1) + ways(n-2), a linear recurrence computable in O(n) time and O(1) space.",
+        },
+    },
     "network_delay": {
         "rejected": [
             RejectedParadigm(paradigm_id="dp_optimal_substructure", reason="Shortest-path relaxation with a monotonic non-negative-weight invariant is enough; no explicit subproblem table needed."),

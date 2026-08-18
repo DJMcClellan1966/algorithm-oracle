@@ -28,6 +28,7 @@ from src.problem_shapes import detect_shape, SHAPE_PARADIGM
         ("US coin denominations (1, 5, 10, 25), find the minimum count.", "coin_change"),
         ("Use Union-Find to find the redundant connection in this graph.", "redundant_connection"),
         ("Find the shortest path using Dijkstra's algorithm.", "network_delay"),
+        ("You are climbing stairs and can take 1 or 2 steps at a time.", "climbing_stairs"),
     ],
 )
 def test_detect_shape_canonical_phrasings(text, expected_shape):

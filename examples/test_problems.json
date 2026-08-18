@@ -70,5 +70,11 @@
     "problem": "You are given n network nodes, a list of directed weighted edges (u, v, w) representing travel times, and a starting node k. Using the shortest path from k, return the minimum time for a signal sent from node k to reach every node, or -1 if some node is unreachable.",
     "expected_paradigm_id": "shortest_path",
     "notes": "Classic single-source shortest path (LeetCode 'Network Delay Time'); Dijkstra requires non-negative weights."
+  },
+  {
+    "id": "climbing_stairs",
+    "problem": "You are climbing a staircase with n steps. Each time you can climb either 1 or 2 steps. Return the number of distinct ways to climb to the top.",
+    "expected_paradigm_id": "math_formula",
+    "notes": "Classic linear-recurrence counting problem (LeetCode 'Climbing Stairs'); reduces to a Fibonacci-shaped recurrence, no search needed."
   }
 ]

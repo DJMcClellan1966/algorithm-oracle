@@ -740,7 +740,48 @@ function solve(n, times, k):
     )
 
 
+def _template_climbing_stairs() -> ConcreteAlgorithm:
+    reference = '''\
+def solve(n):
+    if n <= 1:
+        return 1
+    return solve(n - 1) + solve(n - 2)
+'''
+    candidate = '''\
+def solve(n):
+    if n <= 1:
+        return 1
+    a, b = 1, 1
+    for _ in range(2, n + 1):
+        a, b = b, a + b
+    return b
+'''
+    return ConcreteAlgorithm(
+        paradigm_id="math_formula",
+        loop_invariant_or_key_insight=(
+            "The last step taken to reach stair n is either a single step from n-1 or a double "
+            "step from n-2, and these two cases are disjoint and exhaustive, so "
+            "ways(n) = ways(n-1) + ways(n-2). Only the previous two values are ever needed, "
+            "so the running pair (a, b) is sufficient -- no table, no search."
+        ),
+        pseudocode="""\
+function solve(n):
+    if n <= 1: return 1
+    a, b = 1, 1
+    repeat (n - 1) times:
+        a, b = b, a + b
+    return b
+""",
+        time_complexity="O(n) time, O(1) space",
+        space_complexity="O(1)",
+        brute_force_reference=reference.strip(),
+        python_candidate=candidate.strip(),
+        notes="Climbing Stairs / linear recurrence (math_formula) template.",
+    )
+
+
 TEMPLATES = {
+    "climbing_stairs": _template_climbing_stairs,
     "network_delay": _template_network_delay,
     "redundant_connection": _template_redundant_connection,
     "activity": _template_activity_selection,

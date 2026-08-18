@@ -20,6 +20,7 @@ from typing import Optional
 _SHAPES: list[tuple[str, tuple[str, ...]]] = [
     ("redundant_connection", ("redundant connection", "redundant edge", "union-find", "union find", "disjoint set")),
     ("network_delay", ("network delay", "shortest path", "dijkstra", "bellman-ford", "single source", "single-source")),
+    ("climbing_stairs", ("climbing stairs", "climb stairs", "distinct ways to climb", "1 or 2 steps")),
     ("topo", ("topological", "topo sort", "topo-sort")),
     ("cycle", ("cycle", "directed graph", "detect cycle")),
     ("activity", ("activity", "activities", "interval", "intervals", "non-overlapping", "finish time")),
@@ -40,6 +41,7 @@ _COIN_CHANGE_CANONICAL_CUES = ("us ", "1, 5, 10, 25", "canonical")
 SHAPE_PARADIGM = {
     "redundant_connection": "union_find",
     "network_delay": "shortest_path",
+    "climbing_stairs": "math_formula",
     "topo": "graph_traversal",
     "cycle": "graph_traversal",
     "activity": "greedy_exchange",

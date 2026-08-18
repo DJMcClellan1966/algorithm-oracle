@@ -284,6 +284,25 @@ DFS three-coloring also works for cycle detection, but Union-Find cannot produce
     )
 
 
+def _explain_climbing_stairs(profile, classification, algorithm, verification):
+    why = """The last step taken to reach stair n is either a single step from stair n-1 or a double step from stair n-2 -- every way to reach n ends in exactly one of these two cases, and the cases never overlap.
+
+This gives the recurrence ways(n) = ways(n-1) + ways(n-2), with base cases ways(0) = 1 (do nothing) and ways(1) = 1 (one single step). Because each value only ever depends on the two values immediately before it, there is no need to store a full table indexed by every subproblem -- carrying just the running pair forward is enough, which is what separates this from a general dynamic-programming table lookup.
+
+A closed form exists (Binet's formula, via the golden ratio) but introduces floating-point rounding for exact integer counts, so the direct linear recurrence is both simpler and exact."""
+    return Explanation(
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
+        textbook_why=why.strip() + "\n\n" + _verification_note(verification),
+        why_alternatives_fail=_contrastive_from_rejections(classification),
+        edge_cases_discussed=[
+            "n = 0 → 1 way (stay put).",
+            "n = 1 → 1 way (a single step).",
+            "n = 2 → 2 ways (two singles, or one double).",
+        ],
+    )
+
+
 def _explain_network_delay(profile, classification, algorithm, verification):
     why = """Dijkstra maintains a set of nodes whose shortest distance from the source is already finalized, growing that set one node at a time.
 
@@ -335,6 +354,7 @@ _SHAPE_EXPLAINERS = {
     "knapsack": _explain_knapsack,
     "redundant_connection": _explain_redundant_connection,
     "network_delay": _explain_network_delay,
+    "climbing_stairs": _explain_climbing_stairs,
 }
 
 

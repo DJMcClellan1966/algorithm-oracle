@@ -245,6 +245,17 @@ def generate_random_weighted_digraph(n: int, edge_prob: float = 0.4, max_weight:
     return (n, times, k)
 
 
+def generate_random_stair_count(max_n: int = 12) -> int:
+    return random.randint(0, max_n)
+
+
+def generate_adversarial_stair_counts() -> list[dict]:
+    return [
+        {"desc": "zero steps", "input": 0},
+        {"desc": "one step", "input": 1},
+    ]
+
+
 def generate_adversarial_weighted_digraphs() -> list[dict]:
     return [
         {"desc": "single node", "input": (1, [], 1)},
@@ -463,6 +474,9 @@ def run_verification_for_paradigm(
     elif paradigm_id == "shortest_path":
         random_inputs = [generate_random_weighted_digraph(random.randint(1, 6)) for _ in range(num_random)]
         adv = generate_adversarial_weighted_digraphs()
+    elif paradigm_id == "math_formula":
+        random_inputs = [generate_random_stair_count() for _ in range(num_random)]
+        adv = generate_adversarial_stair_counts()
     else:
         return run_verification(
             candidate, reference, random_n_range=(0, 8), num_random=num_random

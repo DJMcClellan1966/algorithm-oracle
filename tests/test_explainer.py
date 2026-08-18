@@ -34,6 +34,7 @@ EXPLAINER_EXPECTATIONS = {
     "topo_sort": ("invariant_or_coloring", "in-degree"),
     "redundant_connection": ("component_invariant", "disjoint-set"),
     "network_delay": ("cut_property_or_relaxation", "Dijkstra"),
+    "climbing_stairs": ("mathematical_derivation", "Binet"),
 }
 
 

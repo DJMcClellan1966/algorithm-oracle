@@ -62,6 +62,12 @@ END_TO_END = [
         "shortest_path",
         "passed",
     ),
+    (
+        "You are climbing stairs with n steps, taking either 1 or 2 steps at "
+        "a time. Return the number of distinct ways to climb to the top.",
+        "math_formula",
+        "passed",
+    ),
 ]
 
 
