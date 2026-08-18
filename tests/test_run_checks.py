@@ -17,16 +17,18 @@ sys.path.insert(0, str(ROOT))
 def test_run_checks_sh_contains_required_steps():
     script = (ROOT / "run_checks.sh").read_text(encoding="utf-8")
     assert "set -euo pipefail" in script
-    assert "python -m pytest tests/" in script
+    assert "-m pytest tests/" in script
     assert "scripts/gatekeeper_smoke.py" in script
     assert "checks passed" in script
+    assert ".venv" in script, "gatekeeper must use the project's own venv, not a bare `python`"
 
 
 def test_run_checks_ps1_contains_required_steps():
     script = (ROOT / "run_checks.ps1").read_text(encoding="utf-8")
-    assert "python -m pytest tests/" in script
+    assert "-m pytest tests/" in script
     assert "scripts/gatekeeper_smoke.py" in script
     assert "checks passed" in script
+    assert ".venv" in script, "gatekeeper must use the project's own venv, not a bare `python`"
 
 
 def test_gatekeeper_smoke_requires_lis_passed():
