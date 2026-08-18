@@ -423,9 +423,10 @@ def _llm_explain(
     from src.llm_client import get_llm_client_and_model
 
     taxonomy = load_taxonomy()
-    template = _argument_template_for(classification.primary_paradigm_id, taxonomy)
+    template_key = _argument_template_key(classification.primary_paradigm_id, taxonomy)
+    template_text = _argument_template_for(classification.primary_paradigm_id, taxonomy)
     system = (PROMPTS_DIR / "explainer_system.txt").read_text(encoding="utf-8")
-    system += f"\n\nArgument template you MUST follow:\n{template}\n"
+    system += f"\n\nArgument template you MUST follow:\n{template_text}\n"
 
     user = f"""Problem profile:
 {profile.model_dump_json(indent=2)}
@@ -440,7 +441,7 @@ Verification:
 {verification.model_dump_json(indent=2)}
 
 Produce an Explanation JSON object. paradigm_id must match the classification.
-argument_template_used should name the template you followed.
+argument_template_used MUST be exactly this string: "{template_key}"
 """
 
     client, model = get_llm_client_and_model(model)
@@ -453,7 +454,13 @@ argument_template_used should name the template you followed.
         ],
         temperature=0.3,
     )
+    # Both fields are fully determined by the classification + taxonomy --
+    # force them rather than trust the model's free-form echo, same
+    # treatment paradigm_id already got. Confirmed necessary: the model
+    # reliably ignores the "name the template" instruction and echoes
+    # paradigm_id itself instead, even when told the exact string to use.
     result.paradigm_id = classification.primary_paradigm_id
+    result.argument_template_used = template_key
     return result
 
 

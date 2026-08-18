@@ -88,6 +88,7 @@ END_TO_END = [
 def offline_pipeline(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OLLAMA_MODEL", raising=False)
 
 
 def _assert_full_dict(result: dict, *, gated: bool) -> None:

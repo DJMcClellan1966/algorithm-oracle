@@ -28,6 +28,7 @@ SPECIFIED_LIS = (
 def offline_profiler(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OLLAMA_MODEL", raising=False)
 
 
 def test_underspecified_graph_profile_flags_missing_constraints():

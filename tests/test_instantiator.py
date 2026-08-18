@@ -45,6 +45,7 @@ TEMPLATE_MARKERS = {
 def offline_instantiator(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OLLAMA_MODEL", raising=False)
 
 
 def _examples():

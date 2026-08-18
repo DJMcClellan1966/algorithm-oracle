@@ -18,6 +18,13 @@ from src.classifier import classify_from_text
 EXAMPLES_PATH = ROOT / "examples" / "test_problems.json"
 
 
+@pytest.fixture(autouse=True)
+def offline_classifier(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OLLAMA_MODEL", raising=False)
+
+
 def load_examples():
     with open(EXAMPLES_PATH, encoding="utf-8") as f:
         return json.load(f)

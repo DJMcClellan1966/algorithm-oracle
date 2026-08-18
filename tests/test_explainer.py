@@ -8,14 +8,15 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
-from schemas.models import ClassificationResult, RejectedParadigm, VerificationReport
-from src.explainer import explain
+from schemas.models import ClassificationResult, Explanation, RejectedParadigm, VerificationReport
+from src.explainer import _llm_explain, explain
 from src.instantiator import instantiate
 from src.profiler import profile_problem
 
@@ -44,6 +45,7 @@ EXPLAINER_EXPECTATIONS = {
 def offline_explainer(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OLLAMA_MODEL", raising=False)
 
 
 def _examples():
@@ -117,6 +119,37 @@ def test_topo_does_not_reuse_cycle_coloring_explanation():
     why = explanation.textbook_why.lower()
     assert "in-degree" in why
     assert "gray" not in why
+
+
+def test_llm_explain_forces_correct_argument_template_key(monkeypatch):
+    """The model reliably ignores 'name the template you followed' and
+    echoes paradigm_id itself instead, even when told the exact string to
+    use -- confirmed against a real Ollama call. paradigm_id and
+    argument_template_used are both fully determined by the classification
+    + taxonomy, so _llm_explain must force both rather than trust whatever
+    the model puts in the response, mirroring the treatment paradigm_id
+    already got before this fix."""
+    fake_result = Explanation(
+        paradigm_id="wrong_paradigm",
+        argument_template_used="not_the_real_key",
+        textbook_why="stub",
+        why_alternatives_fail=[],
+    )
+    fake_client = MagicMock()
+    fake_client.chat.completions.create.return_value = fake_result
+    monkeypatch.setattr(
+        "src.llm_client.get_llm_client_and_model",
+        lambda model: (fake_client, model),
+    )
+
+    example = _by_id()["lis"]
+    profile = profile_problem(example["problem"])
+    classification = _classification("dp_optimal_substructure")
+    algorithm = instantiate(profile, classification)
+    result = _llm_explain(profile, classification, algorithm, _passed_report())
+
+    assert result.paradigm_id == "dp_optimal_substructure"
+    assert result.argument_template_used == "subproblem_recurrence"
 
 
 def test_paradigm_id_tracks_classification_not_hardcoded_template():
