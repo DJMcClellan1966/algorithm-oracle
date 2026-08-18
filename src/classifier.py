@@ -64,6 +64,16 @@ Produce a ClassificationResult.
 
 
 _SHAPE_DETAILS: dict[str, dict] = {
+    "redundant_connection": {
+        "rejected": [
+            RejectedParadigm(paradigm_id="graph_traversal", reason="No full DFS/BFS traversal or ordering is needed; only whether two nodes are already connected."),
+            RejectedParadigm(paradigm_id="dp_optimal_substructure", reason="No overlapping subproblems; each edge is processed once with near-constant-time set operations."),
+        ],
+        "answers": {
+            "track connected components under unions": "Yes – exactly what Union-Find maintains as edges are added.",
+            "online or offline": "Online – edges are processed one at a time in the given order.",
+        },
+    },
     "activity": {
         "rejected": [
             RejectedParadigm(paradigm_id="dp_optimal_substructure", reason="No overlapping subproblems; greedy choice property holds via exchange argument."),

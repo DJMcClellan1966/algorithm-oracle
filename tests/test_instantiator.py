@@ -33,6 +33,7 @@ TEMPLATE_MARKERS = {
     "lcs": "Longest Common Subsequence",
     "knapsack_01": "0/1 knapsack",
     "topo_sort": "topological sort",
+    "redundant_connection": "Union-Find",
 }
 
 
@@ -76,6 +77,15 @@ def test_known_template_emits_candidate_and_reference(example_id, marker):
     assert algo.python_candidate and "def solve" in algo.python_candidate
     assert algo.brute_force_reference and "def solve" in algo.brute_force_reference
     assert marker.lower() in (algo.notes or "").lower()
+
+
+def test_redundant_connection_candidate_verifies_against_reference():
+    """The real union-find candidate must differentially pass against the
+    brute-force reachability reference, not just have matching structure."""
+    example = _by_id()["redundant_connection"]
+    algo = _instantiate_example(example)
+    report = verify(algo)
+    assert report.status == "passed", report.message
 
 
 def test_coin_change_does_not_reuse_activity_template():

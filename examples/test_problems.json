@@ -58,5 +58,11 @@
     "problem": "Given a directed graph, return a topological ordering of its nodes, or report that a cycle exists.",
     "expected_paradigm_id": "graph_traversal",
     "notes": "Kahn or DFS."
+  },
+  {
+    "id": "redundant_connection",
+    "problem": "You are given a list of edges added one at a time to build a graph on n nodes that started as a tree; exactly one extra edge was added, creating a single cycle. Using Union-Find, identify the redundant edge that can be removed to restore a tree.",
+    "expected_paradigm_id": "union_find",
+    "notes": "Classic Union-Find / disjoint-set problem (LeetCode 'Redundant Connection')."
   }
 ]

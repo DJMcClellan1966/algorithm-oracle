@@ -284,6 +284,25 @@ DFS three-coloring also works for cycle detection, but Union-Find cannot produce
     )
 
 
+def _explain_redundant_connection(profile, classification, algorithm, verification):
+    why = """Maintain a Union-Find (disjoint-set) structure where each component tracks the nodes reachable using edges processed so far.
+
+Invariant: after processing a prefix of edges, two nodes are in the same set if and only if they are connected using only edges from that prefix. Initialization: every node starts as its own singleton set, so the invariant holds vacuously. Each step either unions two different sets, extending the invariant to the new edge, or finds both endpoints already in the same set.
+
+The input is guaranteed to be a tree (n-1 edges) plus exactly one additional edge, so it contains exactly one cycle. By a simple counting argument, exactly one edge -- processed in the given order -- will find its endpoints already connected; every other edge safely extends the growing forest. That one edge is the answer: removing it breaks the unique cycle and leaves a tree."""
+    return Explanation(
+        paradigm_id=classification.primary_paradigm_id,
+        argument_template_used=_argument_template_key(classification.primary_paradigm_id, load_taxonomy()),
+        textbook_why=why.strip() + "\n\n" + _verification_note(verification),
+        why_alternatives_fail=_contrastive_from_rejections(classification),
+        edge_cases_discussed=[
+            "Minimal triangle (3 nodes, 3 edges) → the last edge closing the triangle.",
+            "Star plus one shortcut edge → the shortcut is redundant, not a spoke.",
+            "Chain closed into a loop → the edge that reconnects the two ends.",
+        ],
+    )
+
+
 _SHAPE_EXPLAINERS = {
     "activity": _explain_activity,
     "lis": _explain_lis,
@@ -294,6 +313,7 @@ _SHAPE_EXPLAINERS = {
     "two_sum": _explain_two_sum,
     "lcs": _explain_lcs,
     "knapsack": _explain_knapsack,
+    "redundant_connection": _explain_redundant_connection,
 }
 
 

@@ -574,7 +574,87 @@ def solve(graph):
     )
 
 
+def _template_redundant_connection() -> ConcreteAlgorithm:
+    reference = '''\
+def solve(edges):
+    adj = {}
+    def connected(a, b):
+        if a == b:
+            return True
+        seen = {a}
+        stack = [a]
+        while stack:
+            cur = stack.pop()
+            for nxt in adj.get(cur, []):
+                if nxt == b:
+                    return True
+                if nxt not in seen:
+                    seen.add(nxt)
+                    stack.append(nxt)
+        return False
+    for u, v in edges:
+        if connected(u, v):
+            return [u, v]
+        adj.setdefault(u, []).append(v)
+        adj.setdefault(v, []).append(u)
+    return None
+'''
+    candidate = '''\
+def solve(edges):
+    parent = {}
+    rank = {}
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra == rb:
+            return False
+        if rank[ra] < rank[rb]:
+            ra, rb = rb, ra
+        parent[rb] = ra
+        if rank[ra] == rank[rb]:
+            rank[ra] += 1
+        return True
+    for u, v in edges:
+        if u not in parent:
+            parent[u], rank[u] = u, 0
+        if v not in parent:
+            parent[v], rank[v] = v, 0
+        if not union(u, v):
+            return [u, v]
+    return None
+'''
+    return ConcreteAlgorithm(
+        paradigm_id="union_find",
+        loop_invariant_or_key_insight=(
+            "After processing a prefix of edges, two nodes are in the same Union-Find set "
+            "if and only if they are connected using only edges from that prefix. The input "
+            "is a tree (n-1 edges) plus one extra edge, so exactly one edge -- processed in "
+            "the given order -- finds its endpoints already connected; that edge is the answer."
+        ),
+        pseudocode="""\
+function solve(edges):
+    parent = {}, rank = {}
+    for (u, v) in edges:
+        register u, v as singleton sets if new
+        if find(u) == find(v):
+            return [u, v]      # this edge closes the one cycle
+        union(u, v)
+    return None                # unreachable for a valid tree+1-edge input
+""",
+        time_complexity="O(n α(n)) with union by rank + path compression",
+        space_complexity="O(n)",
+        brute_force_reference=reference.strip(),
+        python_candidate=candidate.strip(),
+        notes="Union-Find (redundant connection) template.",
+    )
+
+
 TEMPLATES = {
+    "redundant_connection": _template_redundant_connection,
     "activity": _template_activity_selection,
     "lis": _template_lis,
     "cycle": _template_directed_cycle,

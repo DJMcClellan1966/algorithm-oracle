@@ -50,6 +50,12 @@ END_TO_END = [
         "graph_traversal",
         "passed",
     ),
+    (
+        "Use Union-Find to identify the redundant connection: one extra edge "
+        "was added to an undirected tree, creating a single cycle.",
+        "union_find",
+        "passed",
+    ),
 ]
 
 

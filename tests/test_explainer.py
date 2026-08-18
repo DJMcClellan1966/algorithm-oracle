@@ -32,6 +32,7 @@ EXPLAINER_EXPECTATIONS = {
     "lcs": ("subproblem_recurrence", "dp[i][j]"),
     "knapsack_01": ("subproblem_recurrence", "include or exclude"),
     "topo_sort": ("invariant_or_coloring", "in-degree"),
+    "redundant_connection": ("component_invariant", "disjoint-set"),
 }
 
 

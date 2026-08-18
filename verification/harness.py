@@ -202,6 +202,36 @@ def generate_adversarial_pairs() -> list[dict]:
     ]
 
 
+def generate_random_tree_plus_edge(n: int) -> list[tuple[int, int]]:
+    """n nodes (n clamped to >= 3): a random spanning tree's edges plus one
+    extra edge closing exactly one cycle, order shuffled."""
+    n = max(3, n)
+    nodes = list(range(1, n + 1))
+    random.shuffle(nodes)
+    edges = []
+    for i in range(1, n):
+        parent = nodes[random.randint(0, i - 1)]
+        edges.append((parent, nodes[i]))
+    existing = {frozenset(e) for e in edges}
+    for _ in range(50):
+        a, b = random.sample(nodes, 2)
+        if frozenset((a, b)) not in existing:
+            edges.append((a, b))
+            break
+    else:
+        edges.append((nodes[0], nodes[1]))
+    random.shuffle(edges)
+    return edges
+
+
+def generate_adversarial_tree_plus_edge() -> list[dict]:
+    return [
+        {"desc": "minimal triangle", "input": [(1, 2), (1, 3), (2, 3)]},
+        {"desc": "chain closed into a loop", "input": [(1, 2), (2, 3), (3, 4), (4, 5), (1, 5)]},
+        {"desc": "star plus one shortcut edge", "input": [(1, 2), (1, 3), (1, 4), (1, 5), (2, 3)]},
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Differential testing
 
@@ -400,6 +430,9 @@ def run_verification_for_paradigm(
     elif paradigm_id == "two_pointers_sliding":
         random_inputs = [generate_random_pairs(random.randint(0, 10)) for _ in range(num_random)]
         adv = generate_adversarial_pairs()
+    elif paradigm_id == "union_find":
+        random_inputs = [generate_random_tree_plus_edge(random.randint(3, 8)) for _ in range(num_random)]
+        adv = generate_adversarial_tree_plus_edge()
     else:
         return run_verification(
             candidate, reference, random_n_range=(0, 8), num_random=num_random

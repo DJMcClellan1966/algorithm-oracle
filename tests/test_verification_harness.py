@@ -22,10 +22,12 @@ from verification.harness import (
     generate_adversarial_intervals,
     generate_adversarial_koko,
     generate_adversarial_pairs,
+    generate_adversarial_tree_plus_edge,
     generate_random_digraph,
     generate_random_intervals,
     generate_random_koko,
     generate_random_pairs,
+    generate_random_tree_plus_edge,
     run_verification_for_paradigm,
     run_verification_from_source,
 )
@@ -125,6 +127,18 @@ def test_pair_generators_have_valid_shapes():
     assert by_desc["negatives"] == ([-3, -1, 2], -4)
 
 
+def test_tree_plus_edge_generators_have_valid_shapes():
+    random.seed(1)
+    for n in range(1, 9):
+        edges = generate_random_tree_plus_edge(n)
+        nodes = {u for e in edges for u in e}
+        assert len(edges) == max(3, n)
+        assert len(nodes) == max(3, n)
+    adv = generate_adversarial_tree_plus_edge()
+    descs = {c["desc"] for c in adv}
+    assert {"minimal triangle", "chain closed into a loop", "star plus one shortcut edge"} <= descs
+
+
 @pytest.mark.parametrize(
     "paradigm_id, adversarial_fn",
     [
@@ -132,6 +146,7 @@ def test_pair_generators_have_valid_shapes():
         ("graph_traversal", generate_adversarial_digraphs),
         ("binary_search", generate_adversarial_koko),
         ("two_pointers_sliding", generate_adversarial_pairs),
+        ("union_find", generate_adversarial_tree_plus_edge),
     ],
 )
 def test_paradigm_runner_uses_named_generators(paradigm_id, adversarial_fn):
@@ -156,6 +171,7 @@ def test_paradigm_adversarial_counts_are_distinct():
         len(generate_adversarial_koko()),
         len(generate_adversarial_pairs()),
         len(generate_adversarial_arrays()),
+        len(generate_adversarial_tree_plus_edge()),
     ]
     assert len(set(counts)) == len(counts)
 
@@ -169,6 +185,7 @@ def test_paradigm_adversarial_counts_are_distinct():
         ("two_pointers_sliding", generate_adversarial_pairs),
         ("dp_optimal_substructure", generate_adversarial_arrays),
         ("divide_and_conquer", generate_adversarial_arrays),
+        ("union_find", generate_adversarial_tree_plus_edge),
         ("not_a_real_paradigm", generate_adversarial_arrays),
     ],
 )

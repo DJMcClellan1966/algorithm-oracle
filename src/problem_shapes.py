@@ -18,6 +18,7 @@ from typing import Optional
 # context (topo-sort problems also mention "directed graph", so topo must be
 # checked before the more general cycle-detection shape).
 _SHAPES: list[tuple[str, tuple[str, ...]]] = [
+    ("redundant_connection", ("redundant connection", "redundant edge", "union-find", "union find", "disjoint set")),
     ("topo", ("topological", "topo sort", "topo-sort")),
     ("cycle", ("cycle", "directed graph", "detect cycle")),
     ("activity", ("activity", "activities", "interval", "intervals", "non-overlapping", "finish time")),
@@ -36,6 +37,7 @@ _COIN_CHANGE_CANONICAL_CUES = ("us ", "1, 5, 10, 25", "canonical")
 
 # Paradigm each shape belongs to -- used by the classifier's offline mock.
 SHAPE_PARADIGM = {
+    "redundant_connection": "union_find",
     "topo": "graph_traversal",
     "cycle": "graph_traversal",
     "activity": "greedy_exchange",

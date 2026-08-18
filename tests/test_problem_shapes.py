@@ -26,6 +26,7 @@ from src.problem_shapes import detect_shape, SHAPE_PARADIGM
         ("Compute the longest common subsequence of two strings.", "lcs"),
         ("0/1 knapsack: maximize value under a weight capacity.", "knapsack"),
         ("US coin denominations (1, 5, 10, 25), find the minimum count.", "coin_change"),
+        ("Use Union-Find to find the redundant connection in this graph.", "redundant_connection"),
     ],
 )
 def test_detect_shape_canonical_phrasings(text, expected_shape):
@@ -36,6 +37,13 @@ def test_topo_checked_before_cycle():
     """Topo-sort problems also mention 'directed graph'; topo must win."""
     text = "Given a directed graph, return a topological ordering, or report a cycle exists."
     assert detect_shape(text) == "topo"
+
+
+def test_redundant_connection_checked_before_cycle():
+    """The redundant-connection problem's own text mentions 'cycle'; the
+    union-find-specific phrasing must win, not the generic cycle shape."""
+    text = "Union-Find: identify the redundant edge that creates a single cycle."
+    assert detect_shape(text) == "redundant_connection"
 
 
 def test_coin_change_requires_both_currency_and_canonical_cue():
