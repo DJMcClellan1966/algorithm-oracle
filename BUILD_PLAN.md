@@ -32,7 +32,7 @@ Each stage: schema → implementation → unit/regression tests → only then wi
 | 2.1 | Pydantic models stable | Import + round-trip JSON |
 | 2.2 | Profiler + clarification gate | Underspecified graph sets `needs_clarification` |
 | 2.3 | Classifier + labeled regression | `tests/test_classifier_regression.py` green |
-| 2.4 | Instantiator templates | LIS/activity/cycle/… emit candidate + reference |
+| 2.4 | Instantiator templates | LIS/activity/cycle/… emit candidate + reference (all 11 paradigms as of Epic 4) |
 | 2.5 | Explainer templates | Argument template + contrastive rejections |
 | 2.6 | `run_oracle` orchestration | Full dict; force=True bypasses gate |
 
@@ -44,6 +44,27 @@ Each stage: schema → implementation → unit/regression tests → only then wi
 | 3.1 | Streamlit: pseudocode first, Python toggle | Manual |
 | 3.2 | `run_checks.sh` gatekeeper | Exits 0 on clean tree |
 | 3.3 | README / PRODUCT / AGENTS aligned | Human review |
+
+---
+
+---
+
+## Epic 4 — Full paradigm coverage — **done**
+
+**Goal:** Every paradigm in `taxonomy/paradigms.yaml` gets a real instantiator template, verification generator, and explainer template — not just the original 6 shipped in Epics 1–3.
+
+| ID | Task | Acceptance |
+|----|------|------------|
+| 4.1 | Shared shape detection (`src/problem_shapes.py`) | Classifier/instantiator/explainer keyword-matching consolidated into one module; fixed 3 real cross-stage drift bugs found in the process (explainer missing keywords the other two had, classifier checking cycle before topo) |
+| 4.2 | Fix `topo_sort` candidate/reference | Both used `import` inside the sandboxed `solve` (`_SAFE_BUILTINS` has no `__import__`, so it crashed on every real call); replaced with import-free equivalents. No prior test had ever run the real candidate |
+| 4.3 | `union_find` — Redundant Connection | Union-Find with path compression, verified against a BFS-reachability reference |
+| 4.4 | `shortest_path` — Network Delay Time | Array-based Dijkstra, verified against Bellman-Ford |
+| 4.5 | `math_formula` — Climbing Stairs | O(1)-space linear recurrence, verified against exponential recursion |
+| 4.6 | `backtracking` — N-Queens count | Pruned backtracking, verified against a brute-force permutation reference; counting variant used since a specific board isn't unique across two correct search algorithms, but the count is |
+| 4.7 | `network_flow` — max-flow value | Edmonds-Karp (BFS augmenting paths), verified against naive Ford-Fulkerson (DFS augmenting paths); same "canonical scalar" reasoning as 4.6 |
+| 4.8 | `run_checks.sh` / `run_checks.ps1` venv-aware | Gatekeeper finds or creates `.venv` automatically instead of depending on a bare `python` on PATH |
+
+**Exit Epic 4 when:** all 11 taxonomy paradigms have a working instantiator + verification generator + explainer template + labeled `examples/test_problems.json` entry, and `test_every_template_candidate_actually_verifies` passes for every one of them — true as of 162 passing tests.
 
 ---
 
